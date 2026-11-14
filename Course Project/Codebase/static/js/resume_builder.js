@@ -1,658 +1,599 @@
 /**
- * INTERNTRACK — AI Resume & CV Builder
+ * INTERNTRACK — AI Resume & CV Builder Controller
  * Features:
- * 1. Type-to-Search University Database Lookup (Name or USN)
- * 2. Starts with clean / empty resume
- * 3. Step 1: Populates verified student identity from SQLite
- * 4. Step 2: Student picks skill tags & enters project details
- * 5. Step 3: Generates clean ATS resume & 1-click bridge to Skills Matcher
+ * - Live type-to-search database lookup from SQLite (/api/students/all)
+ * - 3-Step Guided Wizard (Academic Identity -> Skills & Projects -> Review & Match)
+ * - Interactive Clickable Skill Chips (100+ Skill Taxonomy)
+ * - Real-Time ATS White-Paper Preview Sheet
+ * - 1-Click Bridge to Resume / Skills Auto-Matcher
+ * - Export to Print/PDF and Plain Text Copy
  */
 
-// Fallback registry of benchmark students if API is unreachable
-const LOCAL_STUDENT_CATALOG = [
-  {
-    usn: "01FE21BCS001",
-    name: "Aishwarya Patil",
-    branch: "Computer Science & Engineering",
-    semester: 8,
-    cgpa: 9.4,
-    email: "aishwarya.p@kletech.ac.in",
-    phone: "+91 984500100",
-    role: "Software Engineering & Systems Research Intern",
-    location: "Bengaluru, Karnataka"
-  },
-  {
-    usn: "1KG21CS045",
-    name: "Rahul Kumar",
-    branch: "Computer Science & Engineering (AI)",
-    semester: 8,
-    cgpa: 8.5,
-    email: "rahul.k@kletech.ac.in",
-    phone: "+91 9876543210",
-    role: "AI / Machine Learning Engineer Intern",
-    location: "Hubballi / Bengaluru, Karnataka"
-  },
-  {
-    usn: "1KG21CS008",
-    name: "Ananya Sharma",
-    branch: "Computer Science & Engineering",
-    semester: 8,
-    cgpa: 9.1,
-    email: "ananya.s@kletech.ac.in",
-    phone: "+91 9876543211",
-    role: "Cloud Engineering & Enterprise Systems Intern",
-    location: "Bengaluru / Pune"
-  },
-  {
-    usn: "1KG21CS072",
-    name: "Rohan Verma",
-    branch: "Computer Science & Engineering",
-    semester: 8,
-    cgpa: 7.2,
-    email: "rohan.v@kletech.ac.in",
-    phone: "+91 9876543212",
-    role: "Full-Stack Web Developer Intern",
-    location: "Bengaluru / Remote"
-  },
-  {
-    usn: "1KG21CS099",
-    name: "Sneha Patil",
-    branch: "Computer Science & Engineering",
-    semester: 8,
-    cgpa: 6.8,
-    email: "sneha.p@kletech.ac.in",
-    phone: "+91 9876543213",
-    role: "QA Automation & Data Systems Intern",
-    location: "Pune / Bangalore"
-  },
-  {
-    usn: "1KG21CS050",
-    name: "Anam",
-    branch: "Computer Science & Engineering",
-    semester: 8,
-    cgpa: 8.8,
-    email: "anam.k@kletech.ac.in",
-    phone: "+91 9876543214",
-    role: "Research & Innovation Intern",
-    location: "Bengaluru"
-  },
-  {
-    usn: "01FE21BCS003",
-    name: "Pooja Hegde",
-    branch: "Information Science & Engineering",
-    semester: 8,
-    cgpa: 8.7,
-    email: "pooja.h@kletech.ac.in",
-    phone: "+91 984500102",
-    role: "InStep Digital Specialist Intern",
-    location: "Hubballi"
-  }
-];
+let rbSelectedSkills = new Set();
+let rbSearchDebounceTimer = null;
 
-let currentBuilderStep = 1;
-let activeSelectedSkills = new Set();
-let searchDebounceTimer = null;
+document.addEventListener("DOMContentLoaded", () => {
+  // Setup real-time listeners on inputs
+  const inputsToWatch = [
+    "rbFullName", "rbUsn", "rbBranch", "rbSemester", "rbCollege", "rbCgpa",
+    "rbBacklogs", "rbCredits", "rbEmail", "rbPhone", "rbLinkedin", "rbGithub",
+    "rbSummary", "rbProj1Title", "rbProj1Tech", "rbProj1Desc",
+    "rbProj2Title", "rbProj2Tech", "rbProj2Desc", "rbProj3Title", "rbProj3Tech", "rbProj3Desc",
+    "rbExpCompany", "rbExpRole", "rbExpDuration", "rbExpDesc", "rbAchievements"
+  ];
 
-// ============================================================
-// Step Navigation
-// ============================================================
-function rbGoToStep(step) {
-  currentBuilderStep = step;
-
-  for (let s = 1; s <= 3; s++) {
-    const btn = document.getElementById(`rbStepBtn${s}`);
-    const card = document.getElementById(`rbStepCard${s}`);
-    if (btn) {
-      btn.classList.remove("active", "completed");
-      if (s === step) {
-        btn.classList.add("active");
-      } else if (s < step) {
-        btn.classList.add("completed");
-      }
+  inputsToWatch.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", updateResumeBuilderPreview);
     }
-    if (card) {
-      card.style.display = (s === step) ? "block" : "none";
+  });
+});
+
+function initResumeBuilder() {
+  if (rbSelectedSkills.size === 0 && (!document.getElementById("rbFullName") || !document.getElementById("rbFullName").value)) {
+    // If empty, auto-fetch current logged in USN if available
+    if (typeof currentUSN !== "undefined" && currentUSN) {
+      fetchStudentByUSN(currentUSN);
     }
-  }
-
-  updateResumeBuilderPreview();
-
-  const builderView = document.getElementById("view-resume-builder");
-  if (builderView && step > 1) {
-    builderView.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
-// ============================================================
-// Type-to-Search University Student Record Lookup
-// ============================================================
-function handleStudentSearchInput(e) {
-  const query = e.target.value.trim();
+// ---------------------------------------------------------------------
+// 1. Live Type-to-Search Database Lookup
+// ---------------------------------------------------------------------
+
+function handleStudentSearchInput(event) {
+  const query = event.target.value.trim();
   const dropdown = document.getElementById("rbSearchResultsDropdown");
   if (!dropdown) return;
 
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  if (rbSearchDebounceTimer) clearTimeout(rbSearchDebounceTimer);
 
-  if (!query || query.length < 2) {
+  if (query.length < 2) {
     dropdown.style.display = "none";
     dropdown.innerHTML = "";
     return;
   }
 
-  searchDebounceTimer = setTimeout(async () => {
-    let matches = [];
-
-    // 1. Try querying backend API /api/students/all?search=...
+  rbSearchDebounceTimer = setTimeout(async () => {
     try {
       const res = await fetch(`/api/students/all?search=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          matches = data.slice(0, 6);
-        }
+      if (!res.ok) throw new Error("Search failed");
+      const students = await res.json();
+
+      if (!students || students.length === 0) {
+        dropdown.innerHTML = `<div class="rb-search-item" style="color:var(--text-muted); cursor:default;">No university records found matching "${query}"</div>`;
+        dropdown.style.display = "block";
+        return;
       }
-    } catch (err) {
-      // Fallback to local catalog
-    }
 
-    // 2. Fallback to local benchmark catalog if no API matches
-    if (matches.length === 0) {
-      const qLower = query.toLowerCase();
-      matches = LOCAL_STUDENT_CATALOG.filter(s => 
-        s.name.toLowerCase().includes(qLower) || s.usn.toLowerCase().includes(qLower)
-      ).slice(0, 6);
-    }
-
-    if (matches.length === 0) {
-      dropdown.innerHTML = `
-        <div style="padding:0.6rem 0.85rem; font-size:0.78rem; color:#94a3b8;">
-          <i class="fa-solid fa-circle-info"></i> No university record found for "<strong>${escapeHtml(query)}</strong>". You can type details manually in Step 1.
+      dropdown.innerHTML = students.slice(0, 8).map(s => `
+        <div class="rb-search-item" onclick="selectStudentSearchResult('${encodeURIComponent(JSON.stringify(s))}')">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#f8fafc;">${s.name}</strong>
+            <span class="badge" style="font-size:0.7rem; background:rgba(56,189,248,0.15); color:#38bdf8;">${s.usn}</span>
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8; display:flex; gap:0.75rem; margin-top:2px;">
+            <span><i class="fa-solid fa-graduation-cap"></i> ${s.branch} (Sem ${s.semester})</span>
+            <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> CGPA: ${s.cgpa}</span>
+            <span><i class="fa-solid fa-briefcase"></i> ${s.placement_status === 'PLACED_COMPANY' ? (s.placed_company || 'Placed') : 'Eligible'}</span>
+          </div>
         </div>
-      `;
+      `).join("");
       dropdown.style.display = "block";
-      return;
+    } catch (err) {
+      console.error("Student search error:", err);
+      dropdown.style.display = "none";
     }
-
-    // Render suggestion items
-    dropdown.innerHTML = matches.map(s => `
-      <div class="rb-search-item" onclick="selectStudentSearchResult('${escapeHtml(s.usn)}')">
-        <div style="font-weight:700; color:#f8fafc; display:flex; justify-content:space-between;">
-          <span>${escapeHtml(s.name)}</span>
-          <span style="color:#38bdf8; font-family:monospace; font-size:0.75rem;">${escapeHtml(s.usn)}</span>
-        </div>
-        <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">
-          ${escapeHtml(s.branch || "CSE")} · Semester ${s.semester || 8} · CGPA: <strong>${s.cgpa || "8.5"}</strong>
-        </div>
-      </div>
-    `).join("");
-    dropdown.style.display = "block";
-  }, 180);
+  }, 250);
 }
 
-function handleStudentSearchKeydown(e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
+function handleStudentSearchKeydown(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
     executeStudentFetchFromSearch();
   }
 }
 
-async function selectStudentSearchResult(usn) {
-  const searchInput = document.getElementById("rbSearchStudentInput");
-  const dropdown = document.getElementById("rbSearchResultsDropdown");
-  if (dropdown) dropdown.style.display = "none";
-
-  await fetchAndPopulateStudent(usn);
+function selectStudentSearchResult(encodedJson) {
+  try {
+    const student = JSON.parse(decodeURIComponent(encodedJson));
+    populateStudentData(student);
+    const dropdown = document.getElementById("rbSearchResultsDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    const input = document.getElementById("rbSearchStudentInput");
+    if (input) input.value = `${student.name} (${student.usn})`;
+  } catch (err) {
+    console.error("Error selecting student:", err);
+  }
 }
 
 async function executeStudentFetchFromSearch() {
-  const searchInput = document.getElementById("rbSearchStudentInput");
-  const query = searchInput ? searchInput.value.trim() : "";
-  const dropdown = document.getElementById("rbSearchResultsDropdown");
-  if (dropdown) dropdown.style.display = "none";
+  const input = document.getElementById("rbSearchStudentInput");
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
 
-  if (!query) {
-    alert("Please type a student Name or USN to search.");
-    return;
-  }
-
-  await fetchAndPopulateStudent(query);
-}
-
-async function fetchAndPopulateStudent(queryOrUsn) {
-  const statusEl = document.getElementById("rbAutoFillStatus");
-  if (statusEl) {
-    statusEl.innerHTML = `<span style="color:#38bdf8;"><i class="fa-solid fa-spinner fa-spin"></i> Searching university records for "<strong>${escapeHtml(queryOrUsn)}</strong>"...</span>`;
-  }
-
-  let profile = null;
-
-  // 1. Try fetching exact USN profile
   try {
-    const res = await fetch(`/api/students/profile?usn=${encodeURIComponent(queryOrUsn)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.usn) {
-        profile = data;
-      }
+    const res = await fetch(`/api/students/all?search=${encodeURIComponent(val)}`);
+    if (!res.ok) throw new Error("Search failed");
+    const students = await res.json();
+    if (students && students.length > 0) {
+      populateStudentData(students[0]);
+      input.value = `${students[0].name} (${students[0].usn})`;
+      const dropdown = document.getElementById("rbSearchResultsDropdown");
+      if (dropdown) dropdown.style.display = "none";
+    } else {
+      alert(`No student record found matching "${val}".`);
     }
-  } catch (err) {}
-
-  // 2. If not found, try search endpoint
-  if (!profile) {
-    try {
-      const res = await fetch(`/api/students/all?search=${encodeURIComponent(queryOrUsn)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          profile = data[0];
-        }
-      }
-    } catch (err) {}
-  }
-
-  // 3. Fallback to local catalog
-  if (!profile) {
-    const qLower = queryOrUsn.toLowerCase();
-    profile = LOCAL_STUDENT_CATALOG.find(s => 
-      s.usn.toLowerCase() === qLower || s.name.toLowerCase().includes(qLower)
-    );
-  }
-
-  if (!profile) {
-    if (statusEl) {
-      statusEl.innerHTML = `
-        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:4px; padding:0.45rem 0.85rem; color:#fca5a5; font-size:0.78rem;">
-          <i class="fa-solid fa-triangle-exclamation"></i> No registered student found for "<strong>${escapeHtml(queryOrUsn)}</strong>". You can enter your details manually in Step 1.
-        </div>
-      `;
-      setTimeout(() => { if (statusEl) statusEl.innerHTML = ""; }, 5000);
-    }
-    return;
-  }
-
-  // Populate Step 1 fields
-  const setVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val || "";
-  };
-
-  const branchName = profile.branch === "CSE" ? "Computer Science & Engineering" : 
-                    (profile.branch === "ISE" ? "Information Science & Engineering" : profile.branch || "Computer Science");
-
-  setVal("rbFullName", profile.name);
-  setVal("rbUSN", profile.usn);
-  setVal("rbEmail", profile.email || `${profile.usn.toLowerCase()}@kletech.ac.in`);
-  setVal("rbPhone", profile.phone || "+91 98765 43210");
-  setVal("rbCollege", "KLE Technological University, Hubballi");
-  setVal("rbDegree", `B.E. ${branchName}`);
-  setVal("rbSemester", profile.semester ? `${profile.semester}th Semester` : "8th Semester");
-  setVal("rbCGPA", profile.cgpa ? `${profile.cgpa} / 10` : "8.50 / 10");
-  setVal("rbRole", profile.role || "Software Engineering & AI Intern");
-  setVal("rbLocation", profile.location || "Hubballi / Bengaluru, Karnataka");
-  setVal("rbSummary", `Final-year ${branchName} undergraduate at KLE Tech with solid foundations in algorithms, software systems, and data-driven problem solving.`);
-
-  // Update input box to show fetched student
-  const searchInput = document.getElementById("rbSearchStudentInput");
-  if (searchInput) searchInput.value = `${profile.name} (${profile.usn})`;
-
-  // Step 1 is active so student sees their fetched details
-  rbGoToStep(1);
-
-  if (statusEl) {
-    statusEl.innerHTML = `
-      <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:4px; padding:0.5rem 0.85rem; color:#34d399; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:0.5rem;">
-        <i class="fa-solid fa-circle-check"></i>
-        <span>Official Academic Record verified for <strong>${escapeHtml(profile.name)} (${escapeHtml(profile.usn)})</strong>! Review Step 1 and proceed to Step 2 to choose your skills.</span>
-      </div>
-    `;
-    setTimeout(() => { if (statusEl) statusEl.innerHTML = ""; }, 5000);
+  } catch (err) {
+    console.error("Fetch error:", err);
+    alert("Could not connect to university records database.");
   }
 }
 
-// Close search dropdown on click outside
-document.addEventListener("click", (e) => {
-  const dropdown = document.getElementById("rbSearchResultsDropdown");
-  const searchInput = document.getElementById("rbSearchStudentInput");
-  if (dropdown && e.target !== dropdown && e.target !== searchInput) {
-    dropdown.style.display = "none";
+async function fetchStudentByUSN(usn) {
+  try {
+    const res = await fetch(`/api/students/all?search=${encodeURIComponent(usn)}`);
+    if (res.ok) {
+      const list = await res.json();
+      if (list && list.length > 0) {
+        populateStudentData(list[0]);
+      }
+    }
+  } catch (err) {
+    console.warn("Could not auto-fetch USN data:", err);
   }
-});
+}
 
-// ============================================================
-// Step 2: Skill Tags & Projects Management
-// ============================================================
-function toggleSkillTag(skillName) {
-  if (activeSelectedSkills.has(skillName)) {
-    activeSelectedSkills.delete(skillName);
-  } else {
-    activeSelectedSkills.add(skillName);
+function populateStudentData(s) {
+  setVal("rbFullName", s.name);
+  setVal("rbUsn", s.usn);
+  setVal("rbBranch", s.branch ? `${s.branch} (Computer Science & Engineering)` : "Computer Science & Engineering");
+  setVal("rbSemester", s.semester || 8);
+  setVal("rbCollege", "KLE Technological University, Hubballi");
+  setVal("rbCgpa", s.cgpa || "8.5");
+  setVal("rbBacklogs", s.backlogs !== undefined ? s.backlogs : "0");
+  setVal("rbCredits", s.credits || "120");
+  setVal("rbEmail", s.email || `${s.usn.toLowerCase()}@kletech.ac.in`);
+  setVal("rbPhone", s.phone || "+91 98450 12345");
+  
+  if (!getVal("rbLinkedin")) setVal("rbLinkedin", `https://linkedin.com/in/${s.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`);
+  if (!getVal("rbGithub")) setVal("rbGithub", `https://github.com/${s.name.split(' ')[0].toLowerCase()}${s.usn.slice(-3)}`);
+  
+  if (!getVal("rbSummary")) {
+    setVal("rbSummary", `Final-year Computer Science Engineering undergraduate at KLE Technological University with a ${s.cgpa} CGPA and zero active backlogs. Strong foundation in software design, scalable backend APIs, machine learning pipelines, and autonomous agent workflows. Seeking an 8th-semester industry internship.`);
   }
-  refreshSkillChipsUI();
+
+  // Populate skills
+  rbSelectedSkills.clear();
+  document.querySelectorAll(".rb-skill-chip").forEach(c => c.classList.remove("selected"));
+
+  let skillsArr = [];
+  if (Array.isArray(s.skills)) {
+    skillsArr = s.skills;
+  } else if (typeof s.skills === "string") {
+    try {
+      skillsArr = JSON.parse(s.skills);
+    } catch {
+      skillsArr = s.skills.split(",").map(x => x.trim());
+    }
+  }
+
+  // Default core skills if none
+  if (skillsArr.length === 0) {
+    skillsArr = ["Python", "SQL", "FastAPI", "Git", "Docker", "Machine Learning"];
+  }
+
+  skillsArr.forEach(sk => {
+    rbSelectedSkills.add(sk.trim());
+    const chip = document.querySelector(`.rb-skill-chip[data-skill="${sk.trim().toLowerCase()}"]`);
+    if (chip) chip.classList.add("selected");
+  });
+
+  // Sample default projects if fields are empty
+  if (!getVal("rbProj1Title")) {
+    setVal("rbProj1Title", "InternTrack — Autonomous University Regulatory Assistant (AURA)");
+    setVal("rbProj1Tech", "Python, LangGraph, SQLite3, FastAPI, Vanilla JS");
+    setVal("rbProj1Desc", "• Engineered a 14-lab autonomous agent platform to govern university internship discovery, approvals, and 12-credit evaluations.\n• Built multi-agent swarms with fan-out/fan-in parallel search and human-in-the-loop coordinator approval gates.\n• Achieved 100% pass rate across 81 automated tests with immutable SHA-256 cryptographic audit logs.");
+  }
+
+  if (!getVal("rbProj2Title")) {
+    setVal("rbProj2Title", "Self-Correcting RAG System for Hallucination Detection");
+    setVal("rbProj2Tech", "Python, LLaMA, FAISS, BM25, BGE Embeddings");
+    setVal("rbProj2Desc", "• Implemented a hybrid dense/sparse retrieval pipeline with cross-encoder re-ranking and NLI verification.\n• Mitigated factual hallucinations, achieving 64% accuracy and 0.6975 F1 score on the RAGTruth benchmark.");
+  }
+
+  if (!getVal("rbAchievements")) {
+    setVal("rbAchievements", "• IEEE Publication: Zero-Shot Traffic Classification for Unseen Applications Using CNN and Word2Vec (IEEE I3CTCON 2026).\n• Smart India Hackathon: Shortlisted for AI-based crop disease diagnosis platform.\n• AWS Certified: AWS Cloud Practitioner Essentials (Amazon Web Services).");
+  }
+
   updateResumeBuilderPreview();
 }
 
-function refreshSkillChipsUI() {
-  document.querySelectorAll(".rb-skill-chip").forEach(chip => {
-    const sName = chip.getAttribute("data-skill");
-    if (activeSelectedSkills.has(sName)) {
-      chip.classList.add("selected");
-    } else {
-      chip.classList.remove("selected");
-    }
-  });
+function setVal(id, v) {
+  const el = document.getElementById(id);
+  if (el && v !== undefined && v !== null) el.value = v;
 }
 
-function addCustomSkill() {
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
+
+// ---------------------------------------------------------------------
+// 2. Wizard Navigation (Steps 1, 2, 3)
+// ---------------------------------------------------------------------
+
+function rbGoToStep(step) {
+  for (let i = 1; i <= 3; i++) {
+    const card = document.getElementById(`rbStepCard${i}`);
+    const btn = document.getElementById(`rbStepBtn${i}`);
+    if (card) card.style.display = i === step ? "block" : "none";
+    if (btn) {
+      if (i === step) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  }
+}
+
+// ---------------------------------------------------------------------
+// 3. Interactive Skill Chips & Custom Tags
+// ---------------------------------------------------------------------
+
+function toggleSkillTag(skillName, chipEl) {
+  if (rbSelectedSkills.has(skillName)) {
+    rbSelectedSkills.delete(skillName);
+    if (chipEl) chipEl.classList.remove("selected");
+  } else {
+    rbSelectedSkills.add(skillName);
+    if (chipEl) chipEl.classList.add("selected");
+  }
+  updateResumeBuilderPreview();
+}
+
+function addCustomSkillTag() {
   const input = document.getElementById("rbCustomSkillInput");
   if (!input) return;
   const val = input.value.trim();
   if (!val) return;
 
-  activeSelectedSkills.add(val);
-  input.value = "";
-
-  const container = document.getElementById("rbCustomSkillsContainer");
-  if (container) {
-    const newChip = document.createElement("button");
-    newChip.type = "button";
-    newChip.className = "rb-skill-chip selected";
-    newChip.setAttribute("data-skill", val);
-    newChip.onclick = () => toggleSkillTag(val);
-    newChip.innerHTML = `<i class="fa-solid fa-check"></i> ${escapeHtml(val)}`;
-    container.appendChild(newChip);
-  }
-
-  updateResumeBuilderPreview();
-}
-
-function insertSampleProject(type) {
-  const setVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-  };
-
-  if (type === "ai") {
-    setVal("rbProj1Title", "AURA Multi-Agent Healthcare Decision & RAG Engine");
-    setVal("rbProj1Tech", "LangGraph, Python, PyTorch, Vector DB");
-    setVal("rbProj1Bullets", "• Architected multi-agent graph with bounded retry loops, achieving 94% retrieval accuracy.\n• Implemented cryptographic audit logging and deterministic verification.");
-  } else if (type === "web") {
-    setVal("rbProj2Title", "Real-Time Placement & Vacancy Decrement Portal");
-    setVal("rbProj2Tech", "FastAPI, React, SQLite, Docker");
-    setVal("rbProj2Bullets", "• Engineered full-stack internship tracking for 500+ candidates.\n• Implemented race-condition-free vacancy decrements and faculty approval gates.");
-  }
-
-  updateResumeBuilderPreview();
-}
-
-function resetResumeBuilder() {
-  if (!confirm("Clear all details and start fresh?")) return;
-
-  const ids = [
-    "rbFullName", "rbUSN", "rbEmail", "rbPhone", "rbCollege", "rbDegree", 
-    "rbSemester", "rbCGPA", "rbRole", "rbLocation", "rbSummary",
-    "rbProj1Title", "rbProj1Tech", "rbProj1Bullets",
-    "rbProj2Title", "rbProj2Tech", "rbProj2Bullets", "rbCertifications"
-  ];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
+  const parts = val.split(",").map(p => p.trim()).filter(Boolean);
+  parts.forEach(skill => {
+    rbSelectedSkills.add(skill);
+    // Add visual chip to selected container if not exists
+    const container = document.getElementById("rbCustomSkillsContainer");
+    if (container) {
+      const chip = document.createElement("span");
+      chip.className = "rb-skill-chip selected";
+      chip.innerHTML = `${skill} <i class="fa-solid fa-xmark" style="font-size:0.7rem; margin-left:4px;" onclick="removeCustomSkillTag('${skill}', this.parentElement)"></i>`;
+      container.appendChild(chip);
+    }
   });
 
-  const searchInput = document.getElementById("rbSearchStudentInput");
-  if (searchInput) searchInput.value = "";
-
-  activeSelectedSkills.clear();
-  refreshSkillChipsUI();
-
-  const customContainer = document.getElementById("rbCustomSkillsContainer");
-  if (customContainer) customContainer.innerHTML = "";
-
-  rbGoToStep(1);
+  input.value = "";
   updateResumeBuilderPreview();
 }
 
-// ============================================================
-// Data Retrieval & Real-Time Preview
-// ============================================================
-function getResumeBuilderData() {
-  const getVal = (id) => {
-    const el = document.getElementById(id);
-    return el ? el.value.trim() : "";
-  };
-
-  const skillsList = Array.from(activeSelectedSkills);
-  return {
-    fullName: getVal("rbFullName"),
-    usn: getVal("rbUSN"),
-    email: getVal("rbEmail"),
-    phone: getVal("rbPhone"),
-    location: getVal("rbLocation"),
-    role: getVal("rbRole"),
-    summary: getVal("rbSummary"),
-    college: getVal("rbCollege"),
-    degree: getVal("rbDegree"),
-    semester: getVal("rbSemester"),
-    cgpa: getVal("rbCGPA"),
-    skills: skillsList.length ? skillsList.join(", ") : "",
-    proj1Title: getVal("rbProj1Title"),
-    proj1Tech: getVal("rbProj1Tech"),
-    proj1Bullets: getVal("rbProj1Bullets"),
-    proj2Title: getVal("rbProj2Title"),
-    proj2Tech: getVal("rbProj2Tech"),
-    proj2Bullets: getVal("rbProj2Bullets"),
-    certifications: getVal("rbCertifications")
-  };
+function removeCustomSkillTag(skill, el) {
+  rbSelectedSkills.delete(skill);
+  if (el) el.remove();
+  updateResumeBuilderPreview();
 }
 
+// ---------------------------------------------------------------------
+// 4. Live ATS-Standard Paper Preview Sheet Rendering
+// ---------------------------------------------------------------------
+
 function updateResumeBuilderPreview() {
-  const d = getResumeBuilderData();
   const preview = document.getElementById("resumePreviewSheet");
   if (!preview) return;
 
-  // Determine if there is any entered data
-  const hasData = Boolean(
-    d.fullName || d.usn || d.degree || d.skills || d.proj1Title || d.summary
-  );
+  const name = getVal("rbFullName") || "YOUR FULL NAME";
+  const usn = getVal("rbUsn") || "USN: 01FE23BCI000";
+  const branch = getVal("rbBranch") || "Computer Science & Engineering";
+  const college = getVal("rbCollege") || "KLE Technological University, Hubballi";
+  const cgpa = getVal("rbCgpa") || "8.5";
+  const email = getVal("rbEmail") || "student@kletech.ac.in";
+  const phone = getVal("rbPhone") || "+91 98450 12345";
+  const linkedin = getVal("rbLinkedin");
+  const github = getVal("rbGithub");
+  const summary = getVal("rbSummary");
 
-  // If empty, show clean, friendly placeholder
-  if (!hasData) {
-    preview.innerHTML = `
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3.5rem 1rem; color:#64748b; text-align:center;">
-        <div style="font-size:2.8rem; color:#cbd5e1; margin-bottom:1rem;">
-          <i class="fa-regular fa-file-lines"></i>
-        </div>
-        <h3 style="margin:0 0 0.5rem 0; font-size:1.1rem; color:#334155; font-weight:700;">Your Resume Preview is Empty</h3>
-        <p style="margin:0; font-size:0.8rem; color:#64748b; max-width:320px; line-height:1.5;">
-          Search your <strong>Name</strong> or <strong>USN</strong> above to fetch your official university record, or fill in <strong>Step 1</strong> to start.
-        </p>
-      </div>
-    `;
-    return;
-  }
+  const proj1Title = getVal("rbProj1Title");
+  const proj1Tech = getVal("rbProj1Tech");
+  const proj1Desc = getVal("rbProj1Desc");
 
-  const formatBullets = (text) => {
-    if (!text) return "";
-    return text.split("\n")
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
-        const clean = line.replace(/^[•\-\*]\s*/, "");
-        return `<li style="margin-bottom:2px;">${escapeHtml(clean)}</li>`;
-      }).join("");
-  };
+  const proj2Title = getVal("rbProj2Title");
+  const proj2Tech = getVal("rbProj2Tech");
+  const proj2Desc = getVal("rbProj2Desc");
 
-  const contactItems = [
-    d.usn ? `<strong>USN:</strong> ${escapeHtml(d.usn)}` : "",
-    d.email ? `<span style="color:#0284c7;">${escapeHtml(d.email)}</span>` : "",
-    d.phone ? escapeHtml(d.phone) : "",
-    d.location ? escapeHtml(d.location) : ""
+  const proj3Title = getVal("rbProj3Title");
+  const proj3Tech = getVal("rbProj3Tech");
+  const proj3Desc = getVal("rbProj3Desc");
+
+  const expCompany = getVal("rbExpCompany");
+  const expRole = getVal("rbExpRole");
+  const expDuration = getVal("rbExpDuration");
+  const expDesc = getVal("rbExpDesc");
+
+  const achievements = getVal("rbAchievements");
+
+  // Skills array from set
+  const skillsList = Array.from(rbSelectedSkills);
+
+  // Contact line
+  const contacts = [
+    email ? `<a href="mailto:${email}" style="color:#0f172a; text-decoration:none;">${email}</a>` : "",
+    phone,
+    linkedin ? `<a href="${linkedin.startsWith('http') ? linkedin : 'https://' + linkedin}" target="_blank" style="color:#0284c7; text-decoration:none;">LinkedIn</a>` : "",
+    github ? `<a href="${github.startsWith('http') ? github : 'https://' + github}" target="_blank" style="color:#0284c7; text-decoration:none;">GitHub</a>` : "",
+    usn
   ].filter(Boolean).join(" &nbsp;|&nbsp; ");
 
-  preview.innerHTML = `
-    <div style="border-bottom:2px solid #0f172a; padding-bottom:6px; margin-bottom:10px;">
-      <h2 style="margin:0; font-size:1.35rem; font-weight:800; color:#0f172a; letter-spacing:0.5px;">${escapeHtml((d.fullName || "STUDENT NAME").toUpperCase())}</h2>
-      ${d.role ? `<div style="font-size:0.86rem; font-weight:700; color:#2563eb; margin-top:2px;">${escapeHtml(d.role)}</div>` : ""}
-      ${contactItems ? `<div style="font-size:0.75rem; color:#475569; margin-top:4px;">${contactItems}</div>` : ""}
-    </div>
-
-    ${d.summary ? `
-    <div style="margin-bottom:10px;">
-      <div class="resume-sheet-section-title">PROFESSIONAL SUMMARY</div>
-      <p style="margin:4px 0 0 0; font-size:0.8rem; color:#334155; line-height:1.4;">${escapeHtml(d.summary)}</p>
-    </div>` : ""}
-
-    ${(d.college || d.degree || d.cgpa) ? `
-    <div style="margin-bottom:10px;">
-      <div class="resume-sheet-section-title">ACADEMIC BACKGROUND</div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:3px;">
-        <strong style="color:#0f172a; font-size:0.82rem;">${escapeHtml(d.college || "University")}</strong>
-        <span style="font-size:0.75rem; color:#64748b;">${escapeHtml(d.semester || "")}</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#334155;">
-        <span>${escapeHtml(d.degree || "")}</span>
-        ${d.cgpa ? `<strong style="color:#059669;">Verified CGPA: ${escapeHtml(d.cgpa)}</strong>` : ""}
-      </div>
-    </div>` : ""}
-
-    ${d.skills ? `
-    <div style="margin-bottom:10px;">
-      <div class="resume-sheet-section-title">TECHNICAL COMPETENCIES</div>
-      <div style="font-size:0.78rem; color:#334155; line-height:1.45; margin-top:4px;">
-        <div><strong>Core Skills:</strong> ${escapeHtml(d.skills)}</div>
-      </div>
-    </div>` : ""}
-
-    ${(d.proj1Title || d.proj2Title) ? `
-    <div style="margin-bottom:10px;">
-      <div class="resume-sheet-section-title">CAPSTONE & ENGINEERING PROJECTS</div>
+  // Build ATS HTML
+  let html = `
+    <div style="font-family:'Segoe UI', Calibri, Arial, sans-serif; line-height:1.45; color:#0f172a;">
       
-      ${d.proj1Title ? `
-      <div style="margin-top:5px; margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
-          <strong style="color:#0f172a;">${escapeHtml(d.proj1Title)}</strong>
-          ${d.proj1Tech ? `<span style="font-size:0.74rem; color:#4338ca; font-weight:700;">[${escapeHtml(d.proj1Tech)}]</span>` : ""}
+      <!-- ATS Header -->
+      <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:12px;">
+        <h1 style="margin:0; font-size:1.65rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; color:#0f172a;">
+          ${name}
+        </h1>
+        <div style="font-size:0.82rem; margin-top:4px; color:#334155;">
+          ${contacts}
         </div>
-        ${d.proj1Bullets ? `
-        <ul style="margin:2px 0 0 1.1rem; padding:0; font-size:0.77rem; color:#334155;">
-          ${formatBullets(d.proj1Bullets)}
-        </ul>` : ""}
-      </div>` : ""}
+      </div>
 
-      ${d.proj2Title ? `
-      <div style="margin-top:5px;">
-        <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
-          <strong style="color:#0f172a;">${escapeHtml(d.proj2Title)}</strong>
-          ${d.proj2Tech ? `<span style="font-size:0.74rem; color:#4338ca; font-weight:700;">[${escapeHtml(d.proj2Tech)}]</span>` : ""}
+      <!-- Professional Summary -->
+      ${summary ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
+          Professional Summary
         </div>
-        ${d.proj2Bullets ? `
-        <ul style="margin:2px 0 0 1.1rem; padding:0; font-size:0.77rem; color:#334155;">
-          ${formatBullets(d.proj2Bullets)}
-        </ul>` : ""}
-      </div>` : ""}
-    </div>` : ""}
+        <div style="font-size:0.82rem; color:#334155; text-align:justify;">
+          ${summary}
+        </div>
+      </div>
+      ` : ''}
 
-    ${d.certifications ? `
-    <div style="margin-bottom:6px;">
-      <div class="resume-sheet-section-title">CERTIFICATIONS & HONORS</div>
-      <ul style="margin:3px 0 0 1.1rem; padding:0; font-size:0.77rem; color:#334155;">
-        ${formatBullets(d.certifications)}
-      </ul>
-    </div>` : ""}
+      <!-- Education -->
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
+          Education
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <strong style="font-size:0.85rem; color:#0f172a;">${college}</strong>
+          <span style="font-size:0.8rem; color:#475569;">2023 – 2027</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.82rem; color:#334155;">
+          <span>Bachelor of Engineering in ${branch}</span>
+          <span><strong>CGPA: ${cgpa} / 10.0</strong></span>
+        </div>
+      </div>
+
+      <!-- Technical Skills -->
+      ${skillsList.length > 0 ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
+          Technical Skills
+        </div>
+        <div style="font-size:0.82rem; color:#334155; line-height:1.5;">
+          <strong>Competencies:</strong> ${skillsList.join(" • ")}
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Projects -->
+      ${(proj1Title || proj2Title || proj3Title) ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:6px;">
+          Featured Projects
+        </div>
+
+        ${proj1Title ? `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <strong style="color:#0f172a;">${proj1Title}</strong>
+            ${proj1Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj1Tech}</span>` : ''}
+          </div>
+          ${proj1Desc ? `
+          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+            ${proj1Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+          </ul>` : ''}
+        </div>
+        ` : ''}
+
+        ${proj2Title ? `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <strong style="color:#0f172a;">${proj2Title}</strong>
+            ${proj2Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj2Tech}</span>` : ''}
+          </div>
+          ${proj2Desc ? `
+          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+            ${proj2Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+          </ul>` : ''}
+        </div>
+        ` : ''}
+
+        ${proj3Title ? `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <strong style="color:#0f172a;">${proj3Title}</strong>
+            ${proj3Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj3Tech}</span>` : ''}
+          </div>
+          ${proj3Desc ? `
+          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+            ${proj3Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+          </ul>` : ''}
+        </div>
+        ` : ''}
+
+      </div>
+      ` : ''}
+
+      <!-- Experience (if filled) -->
+      ${expCompany ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
+          Experience & Internships
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <strong style="color:#0f172a;">${expCompany} — ${expRole || 'Intern'}</strong>
+          <span style="font-size:0.78rem; color:#475569;">${expDuration || ''}</span>
+        </div>
+        ${expDesc ? `
+        <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+          ${expDesc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+        </ul>` : ''}
+      </div>
+      ` : ''}
+
+      <!-- Achievements & Certifications -->
+      ${achievements ? `
+      <div style="margin-bottom:8px;">
+        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
+          Key Achievements & Certifications
+        </div>
+        <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+          ${achievements.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+        </ul>
+      </div>
+      ` : ''}
+
+    </div>
   `;
+
+  preview.innerHTML = html;
 }
 
-// ============================================================
-// Actions: Export & Transfer to Matcher
-// ============================================================
+// ---------------------------------------------------------------------
+// 5. Reset, Copy Plain Text & Print PDF
+// ---------------------------------------------------------------------
+
+function resetResumeBuilder() {
+  if (confirm("Reset the resume builder and clear all fields?")) {
+    document.querySelectorAll("#view-resume-builder input, #view-resume-builder textarea").forEach(el => el.value = "");
+    rbSelectedSkills.clear();
+    document.querySelectorAll(".rb-skill-chip").forEach(c => c.classList.remove("selected"));
+    const container = document.getElementById("rbCustomSkillsContainer");
+    if (container) container.innerHTML = "";
+    updateResumeBuilderPreview();
+    rbGoToStep(1);
+  }
+}
+
 function generateResumePlainText() {
-  const d = getResumeBuilderData();
-  return `${(d.fullName || "STUDENT").toUpperCase()} (USN: ${d.usn || ""})
-${d.degree} | ${d.college}
-${d.semester} | CGPA: ${d.cgpa} | ${d.location}
-Contact: ${d.email} | ${d.phone}
+  const name = getVal("rbFullName") || "STUDENT NAME";
+  const usn = getVal("rbUsn") || "";
+  const branch = getVal("rbBranch") || "CSE";
+  const college = getVal("rbCollege") || "KLE Technological University";
+  const cgpa = getVal("rbCgpa") || "8.5";
+  const email = getVal("rbEmail") || "";
+  const phone = getVal("rbPhone") || "";
+  const linkedin = getVal("rbLinkedin") || "";
+  const github = getVal("rbGithub") || "";
+  const summary = getVal("rbSummary") || "";
+  const skillsList = Array.from(rbSelectedSkills);
 
-TARGET INTERNSHIP ROLE:
-${d.role}
+  const lines = [
+    name.toUpperCase(),
+    `${email} | ${phone} | ${usn}`,
+    `${linkedin} | ${github}`,
+    "----------------------------------------------------------------",
+    "PROFESSIONAL SUMMARY:",
+    summary,
+    "",
+    "EDUCATION:",
+    `${college} (2023 - 2027)`,
+    `Bachelor of Engineering in ${branch} | CGPA: ${cgpa}/10.0`,
+    "",
+    "TECHNICAL SKILLS:",
+    skillsList.join(", "),
+    "",
+    "PROJECTS:",
+    getVal("rbProj1Title") ? `${getVal("rbProj1Title")} (${getVal("rbProj1Tech")})\n${getVal("rbProj1Desc")}\n` : "",
+    getVal("rbProj2Title") ? `${getVal("rbProj2Title")} (${getVal("rbProj2Tech")})\n${getVal("rbProj2Desc")}\n` : "",
+    getVal("rbProj3Title") ? `${getVal("rbProj3Title")} (${getVal("rbProj3Tech")})\n${getVal("rbProj3Desc")}\n` : "",
+    getVal("rbAchievements") ? `ACHIEVEMENTS & CERTIFICATIONS:\n${getVal("rbAchievements")}` : ""
+  ];
 
-PROFESSIONAL SUMMARY:
-${d.summary}
-
-TECHNICAL SKILLS:
-${d.skills}
-
-ACADEMIC & TECHNICAL PROJECTS:
-1. ${d.proj1Title} [${d.proj1Tech}]
-${d.proj1Bullets}
-
-2. ${d.proj2Title} [${d.proj2Tech}]
-${d.proj2Bullets}
-
-CERTIFICATIONS & ACHIEVEMENTS:
-${d.certifications}
-`.trim();
+  return lines.filter(l => l !== undefined && l !== null).join("\n");
 }
 
 function copyResumePlainText() {
   const text = generateResumePlainText();
-  if (!text || text.length < 15) {
-    alert("Resume is currently empty. Please fetch your profile or fill in your details first.");
-    return;
-  }
   navigator.clipboard.writeText(text).then(() => {
-    alert("Formatted ATS-compatible resume text copied to clipboard!");
-  }).catch(() => {
-    alert("Resume copied!");
+    alert("✅ ATS-Formatted Resume copied to clipboard as clean plain text!");
+  }).catch(err => {
+    console.error("Copy failed:", err);
+    alert("Could not copy automatically. You can copy from the preview.");
   });
 }
 
 function printResumeSheet() {
-  const d = getResumeBuilderData();
-  if (!d.fullName && !d.usn) {
-    alert("Resume is currently empty. Please enter your details or fetch your record first.");
-    return;
-  }
-  window.print();
+  const content = document.getElementById("resumePreviewSheet");
+  if (!content) return;
+
+  const printWindow = window.open("", "_blank");
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${getVal("rbFullName") || "Resume"} - InternTrack CV</title>
+        <style>
+          @page { margin: 15mm; size: A4; }
+          body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; margin: 0; padding: 0; color: #0f172a; background: #fff; }
+          a { color: #0f172a; text-decoration: none; }
+          ul { margin-top: 4px; }
+          li { margin-bottom: 2px; }
+        </style>
+      </head>
+      <body>
+        ${content.innerHTML}
+        <script>
+          window.onload = function() { window.print(); window.close(); };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
+
+// ---------------------------------------------------------------------
+// 6. Direct Pipe to Resume & Skills Matcher
+// ---------------------------------------------------------------------
 
 function transferResumeToSkillsMatcher() {
   const text = generateResumePlainText();
-  if (!text || text.length < 20) {
-    alert("Your resume is empty. Please search and fetch your student record, or enter your details first.");
+  if (!text || text.length < 50) {
+    alert("Please enter your academic details and skills first!");
     return;
   }
-  
+
+  // Switch to matcher view
   if (typeof switchView === "function") {
     switchView("resume-matcher");
   }
 
-  const textarea = document.getElementById("resumeTextInput");
-  if (textarea) {
-    textarea.value = text;
+  // Populate matcher textarea
+  const pasteInput = document.getElementById("resumePasteInput");
+  if (pasteInput) {
+    pasteInput.value = text;
   }
 
-  const statusEl = document.getElementById("resumeInputStatus");
-  if (statusEl) {
-    statusEl.innerHTML = `
-      <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:4px; padding:0.5rem 0.85rem; margin-top:0.4rem; color:#34d399; font-weight:600;">
-        <i class="fa-solid fa-circle-check"></i> Resume successfully transferred from Builder! Click <strong>'Auto-Calculate Skill Match'</strong> below to analyze compatibility.
-      </div>
-    `;
+  // Set student USN in matcher if exists
+  const usnInput = document.getElementById("matcherUsnInput");
+  if (usnInput && getVal("rbUsn")) {
+    usnInput.value = getVal("rbUsn");
   }
 
-  const matchBtn = document.getElementById("btnMatchResume");
-  if (matchBtn) {
-    matchBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-    matchBtn.classList.add("pulse-highlight");
-    setTimeout(() => matchBtn.classList.remove("pulse-highlight"), 2000);
-  }
+  // Auto-trigger matching
+  setTimeout(() => {
+    if (typeof triggerResumeSkillsMatch === "function") {
+      triggerResumeSkillsMatch();
+    }
+  }, 300);
 }
-
-// Bind live updates on DOM ready
-document.addEventListener("DOMContentLoaded", () => {
-  const inputs = document.querySelectorAll("#view-resume-builder input, #view-resume-builder textarea");
-  inputs.forEach(input => {
-    input.addEventListener("input", updateResumeBuilderPreview);
-  });
-  // Initial render starts completely empty
-  setTimeout(updateResumeBuilderPreview, 250);
-});

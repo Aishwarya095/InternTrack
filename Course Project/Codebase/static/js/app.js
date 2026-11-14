@@ -61,6 +61,7 @@ function switchView(viewName) {
   if (viewName === "tracking") loadTrackingCards();
   if (viewName === "evaluation") loadEvaluations();
   if (viewName === "audit") loadAuditTrail();
+  if (viewName === "resume-builder" && typeof initResumeBuilder === "function") initResumeBuilder();
   if (viewName === "studio" && typeof loadLabDemo === "function") loadLabDemo(typeof activeLab !== "undefined" ? activeLab : 1);
 }
 
