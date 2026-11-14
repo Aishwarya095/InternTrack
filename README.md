@@ -23,7 +23,7 @@
 
 ## 🔗 Quick Navigation Links
 
-- 📂 [**Assignments Folder (Labs 1 to 12)**](./Assignments/) — Standalone code, test scripts, and execution guides for all 12 coursework assignments.
+- 📂 [**Assignments Folder (Labs 1 to 14)**](./Assignments/) — Standalone code, test scripts, and execution guides for all 14 coursework assignments.
 - 📂 [**Course Project Folder**](./Course%20Project/) — Project codebase, original problem statement, and formal final evaluation report.
   - 📄 [Original Problem Statement Document (DOCX)](./Course%20Project/Problem_Statement.docx)
   - 📄 [Final Course Project Evaluation Report (DOCX)](./Course%20Project/Final_Course_Project_Report.docx)
@@ -31,9 +31,9 @@
 
 ---
 
-## 📚 Overview of the 12 Course Assignments
+## 📚 Overview of the 14 Course Assignments
 
-The 12 course assignments systematically build the capabilities of the autonomous coordinator-and-worker agent platform:
+The 14 course assignments systematically build the capabilities of the autonomous coordinator-and-worker agent platform:
 
 | # | Assignment Title | Core Concept & Mechanism | Technologies / Tools | Folder Link |
 |---|---|---|---|---|
@@ -49,6 +49,8 @@ The 12 course assignments systematically build the capabilities of the autonomou
 | **10** | **Cloud Ops Resilience** | Circuit breaker, exponential backoff retries, and self-healing automated fallback | Circuit Breaker Pattern, Fallback Strategy | [Assignment_10](./Assignments/Assignment_10/) |
 | **11** | **Agentic SDLC Factory** | Automated test-driven green gate validation to build, test, and promote agent tools | Unittest, Green Gate Runner, Factory Pattern | [Assignment_11](./Assignments/Assignment_11/) |
 | **12** | **Safety Governance & Rollback** | Automated PII masking, safety invariant verification, and atomic snapshot rollback | Regex PII Redactor, Invariant Checker, Rollback | [Assignment_12](./Assignments/Assignment_12/) |
+| **13** | **Discipline Specialists** | Specialized domain agents (Coordinator, HoD, Mentor, Dean) enforcing institutional rules | Role-based Subagents, Authority Hierarchies | [Assignment_13](./Assignments/Assignment_13/) |
+| **14** | **Capstone Final Integration** | Unified lifecycle platform, live vacancy decrements, 4-tier preferences & full test suite | LangGraph Swarms, SQLite3, FastAPI, Render | [Assignment_14](./Assignments/Assignment_14/) |
 
 ---
 

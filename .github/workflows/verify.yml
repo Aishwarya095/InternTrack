@@ -29,3 +29,4 @@ jobs:
       run: |
         cd "Course Project/Codebase"
         python -c "import database.db as db; print('Database verified!')"
+

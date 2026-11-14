@@ -1,8 +1,8 @@
-# 📚 Course Assignments (Labs 1 to 12)
+# 📚 Course Assignments (Labs 1 to 14)
 ### Course: 26ECAC401 Agentic AI — 15 Worklets / 14-Lab Build Book (Chapter 10)
 ### Team: InternTrack Team 11 | Department of CSE (AI), KLE Technological University
 
-This directory contains all **12 standalone hands-on assignments** developed across the course lifecycle. Each folder encapsulates the lab concept, source code, unit verification tests, and execution instructions.
+This directory contains all **14 hands-on assignments** developed across the course lifecycle. Each folder encapsulates the deployed lab code from `aura/`, unit verification tests, and execution instructions.
 
 ---
 
@@ -22,6 +22,8 @@ This directory contains all **12 standalone hands-on assignments** developed acr
 | **10** | **Cloud Ops Resilience** | Circuit breaker, exponential backoff retries & self-healing | [Assignment_10](./Assignment_10/) |
 | **11** | **Agentic SDLC Factory** | Automated test-driven green gate validation for agent tools | [Assignment_11](./Assignment_11/) |
 | **12** | **Safety Governance & Rollback** | PII masking, safety invariant checks & atomic snapshot rollback | [Assignment_12](./Assignment_12/) |
+| **13** | **Discipline Specialists** | Specialized domain agents (Coordinator, HoD, Mentor, Dean) | [Assignment_13](./Assignment_13/) |
+| **14** | **Capstone Final Integration** | Unified lifecycle platform, vacancy counters & master verification | [Assignment_14](./Assignment_14/) |
 
 ---
 
