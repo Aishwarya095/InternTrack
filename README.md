@@ -1,4 +1,4 @@
-# InternTrack (AURA)
+# InternTrack
 ### Internship Application & Tracking Portal
 **Course:** 26ECAC401 Agentic AI — 15 Worklets / 14-Lab Build Book (Chapter 10 Capstone)  
 **Institution:** KLE Technological University, Hubballi  
