@@ -25,7 +25,7 @@
 
 - 📂 [**Assignments Folder (Labs 1 to 14)**](./Assignments/) — Standalone code, test scripts, and execution guides for all 14 coursework assignments.
 - 📂 [**Course Project Folder**](./Course%20Project/) — Project codebase, original problem statement, and formal final evaluation report.
-  - 📄 [Original Problem Statement Document (DOCX)](./Course%20Project/Problem_Statement.docx)
+  - 📄 [Original Problem Statement Document (DOCX)](./Course%20Project/Problem_Statement.docx) · [PDF Version](./Course%20Project/AAI_INTERNSHIP_DOC.pdf)
   - 📄 [Final Course Project Evaluation Report (DOCX)](./Course%20Project/Final_Course_Project_Report.docx)
   - 💻 [Full Course Project Codebase](./Course%20Project/Codebase/)
 
