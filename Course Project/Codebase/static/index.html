@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=5.2">
 </head>
 <body>
   <div class="app-container">
@@ -831,214 +831,282 @@
           </div>
         </section>
 
-        <!-- 11B. RESUME / CV BUILDER -->
+        <!-- 11B. RESUME / CV BUILDER (3-Step Guided Wizard + 1-Click DB Auto-Fill) -->
         <section id="view-resume-builder" class="view-panel">
           <div class="card" style="margin-bottom:1.25rem;">
-            <div class="card-header" style="flex-wrap:wrap; gap:0.75rem;">
+            
+            <!-- Header with Title & Quick Export Actions -->
+            <div class="card-header" style="flex-wrap:wrap; gap:0.75rem; border-bottom:1px solid var(--border-subtle); padding-bottom:0.85rem;">
               <div>
                 <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
                   <i class="fa-solid fa-file-pen" style="color:#38bdf8;"></i>
-                  AI Resume & CV Builder
+                  University Resume & CV Builder
                 </h3>
                 <div style="font-size:0.8rem; color:var(--text-muted);">
-                  Create an ATS-friendly, professional internship resume in seconds. Fill your details, preview live, and directly send to the Skills Matcher with 1 click.
+                  3-Step Guided Career Wizard with verified university database auto-fill & direct pipeline to Skills Matcher.
                 </div>
               </div>
               <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                <div style="display:flex; gap:0.35rem; align-items:center;">
-                  <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">1-Click Sample:</span>
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleResumeBuilder('aiml')" style="font-size:0.74rem; padding:0.25rem 0.55rem;">AI/ML</button>
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleResumeBuilder('fullstack')" style="font-size:0.74rem; padding:0.25rem 0.55rem;">Full-Stack</button>
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleResumeBuilder('cloud')" style="font-size:0.74rem; padding:0.25rem 0.55rem;">DevOps</button>
-                </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="copyResumePlainText()" title="Copy Formatted Plain-Text Resume">
                   <i class="fa-solid fa-copy"></i> Copy Text
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="printResumeSheet()" title="Print or Save as PDF">
                   <i class="fa-solid fa-print"></i> Print / PDF
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="transferResumeToSkillsMatcher()" style="background:linear-gradient(135deg, #0284c7, #6366f1); border:none; font-weight:600;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="transferResumeToSkillsMatcher()" style="background:linear-gradient(135deg, #0284c7, #6366f1); border:none; font-weight:700;">
                   <i class="fa-solid fa-wand-magic-sparkles"></i> Send to Skills Matcher ➔
                 </button>
               </div>
             </div>
 
-            <div id="rbStatusMessage" style="min-height:1.2rem; font-size:0.78rem; margin:0.4rem 0;"></div>
+            <!-- MASTER 1-CLICK DATABASE AUTO-FILL BANNER -->
+            <div class="rb-autofill-banner" style="margin-top:1rem;">
+              <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                <div style="font-size:1.4rem; color:#38bdf8;">
+                  <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                  <div style="font-weight:700; font-size:0.88rem; color:#f8fafc;">
+                    ⚡ 1-Click University Database Auto-Fill
+                  </div>
+                  <div style="font-size:0.75rem; color:#94a3b8;">
+                    Pulls verified academic records (USN, CGPA, Branch, and Email) directly from SQLite in 0.1s.
+                  </div>
+                </div>
+              </div>
+              
+              <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <select id="rbStudentUSNSelect" style="background:rgba(15,23,42,0.9); border:1px solid #38bdf8; color:#f1f5f9; padding:0.45rem 0.65rem; border-radius:var(--radius-sm); font-size:0.78rem; font-weight:600;">
+                  <option value="1KG21CS045">1KG21CS045 — Rahul Kumar (CSE, CGPA 8.50)</option>
+                  <option value="1KG21CS008">1KG21CS008 — Ananya Sharma (CSE, CGPA 9.10)</option>
+                  <option value="1KG21CS072">1KG21CS072 — Rohan Verma (CSE, CGPA 7.20)</option>
+                  <option value="01FE21BCS001">01FE21BCS001 — Aishwarya Patil (CSE, CGPA 9.40)</option>
+                </select>
+                <button type="button" class="rb-autofill-btn" onclick="autoFillFromUniversityDatabase()">
+                  <i class="fa-solid fa-bolt"></i> Auto-Generate Resume
+                </button>
+              </div>
+            </div>
 
-            <!-- Two-Column Layout: Form Inputs on Left, Real-Time Paper Preview on Right -->
+            <div id="rbAutoFillStatus" style="margin-bottom:0.75rem;"></div>
+
+            <!-- 3-STEP GUIDED WIZARD NAVIGATION BAR -->
+            <div class="rb-step-nav">
+              <button type="button" class="rb-step-btn active" id="rbStepBtn1" onclick="rbGoToStep(1)">
+                <i class="fa-solid fa-graduation-cap"></i> 1. Academic Identity
+              </button>
+              <button type="button" class="rb-step-btn" id="rbStepBtn2" onclick="rbGoToStep(2)">
+                <i class="fa-solid fa-laptop-code"></i> 2. Skills & Projects
+              </button>
+              <button type="button" class="rb-step-btn" id="rbStepBtn3" onclick="rbGoToStep(3)">
+                <i class="fa-solid fa-eye"></i> 3. Review & Match
+              </button>
+            </div>
+
+            <!-- Two-Column Layout: Active Step on Left, Live Preview on Right -->
             <div style="display:grid; grid-template-columns: 1.15fr 1.25fr; gap:1.25rem; align-items:start;">
               
-              <!-- Form Column -->
-              <div style="max-height:760px; overflow-y:auto; padding-right:0.5rem;">
-                
-                <!-- Section 1: Personal & Contact -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-id-card"></i> 1. Contact & Identification
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Full Name</label>
-                      <input type="text" id="rbFullName" value="ANANYA S." placeholder="e.g. John Doe">
-                    </div>
-                    <div class="rb-field">
-                      <label>USN / Student ID</label>
-                      <input type="text" id="rbUSN" value="1KG21CS045" placeholder="e.g. 01FE23BCI001">
-                    </div>
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Email Address</label>
-                      <input type="email" id="rbEmail" value="ananya.s@kletech.ac.in" placeholder="student@kletech.ac.in">
-                    </div>
-                    <div class="rb-field">
-                      <label>Phone Number</label>
-                      <input type="text" id="rbPhone" value="+91 98765 43210" placeholder="+91 XXXXX XXXXX">
-                    </div>
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Current Location</label>
-                      <input type="text" id="rbLocation" value="Bangalore / Hubballi, Karnataka" placeholder="City, State">
-                    </div>
-                    <div class="rb-field">
-                      <label>LinkedIn Profile URL</label>
-                      <input type="text" id="rbLinkedIn" value="linkedin.com/in/ananya-s" placeholder="linkedin.com/in/username">
-                    </div>
-                  </div>
-                  <div class="rb-field">
-                    <label>GitHub Profile / Portfolio</label>
-                    <input type="text" id="rbGitHub" value="github.com/ananya-s" placeholder="github.com/username">
-                  </div>
-                </div>
+              <!-- Left Column: Wizard Steps Cards -->
+              <div>
 
-                <!-- Section 2: Target Role & Summary -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-bullseye"></i> 2. Target Role & Professional Summary
-                  </div>
-                  <div class="rb-field">
-                    <label>Target Internship Role Title</label>
-                    <input type="text" id="rbRole" value="AI / Machine Learning Engineer Intern" placeholder="e.g. Full-Stack Developer Intern">
-                  </div>
-                  <div class="rb-field">
-                    <label>Professional Summary</label>
-                    <textarea id="rbSummary" rows="3" placeholder="Brief 2-3 sentence overview of your background, technical focus, and internship aspirations...">Final-year Computer Science undergraduate specializing in Artificial Intelligence and Multi-Agent Systems. Experienced in developing deterministic LangGraph pipelines, RAG engines, and deep learning architectures with high accuracy and audit compliance.</textarea>
-                  </div>
-                </div>
+                <!-- STEP 1: Academic Identity -->
+                <div id="rbStepCard1" class="rb-step-container">
+                  <div class="rb-form-section">
+                    <div class="rb-form-section-header">
+                      <i class="fa-solid fa-id-card"></i> Student Identification & Academic Details
+                    </div>
+                    <div class="rb-grid-2">
+                      <div class="rb-field">
+                        <label>Full Student Name</label>
+                        <input type="text" id="rbFullName" value="Rahul Kumar" placeholder="e.g. John Doe">
+                      </div>
+                      <div class="rb-field">
+                        <label>USN / Roll Number</label>
+                        <input type="text" id="rbUSN" value="1KG21CS045" placeholder="e.g. 1KG21CS045">
+                      </div>
+                    </div>
+                    <div class="rb-grid-2">
+                      <div class="rb-field">
+                        <label>Official Email</label>
+                        <input type="email" id="rbEmail" value="rahul.k@kletech.ac.in" placeholder="student@kletech.ac.in">
+                      </div>
+                      <div class="rb-field">
+                        <label>Contact Phone</label>
+                        <input type="text" id="rbPhone" value="+91 98765 43210" placeholder="+91 XXXXX XXXXX">
+                      </div>
+                    </div>
+                    <div class="rb-grid-2">
+                      <div class="rb-field">
+                        <label>University / College</label>
+                        <input type="text" id="rbCollege" value="KLE Technological University, Hubballi">
+                      </div>
+                      <div class="rb-field">
+                        <label>Degree & Department</label>
+                        <input type="text" id="rbDegree" value="B.E. Computer Science & Engineering (AI)">
+                      </div>
+                    </div>
+                    <div class="rb-grid-2">
+                      <div class="rb-field">
+                        <label>Semester</label>
+                        <input type="text" id="rbSemester" value="8th Semester">
+                      </div>
+                      <div class="rb-field">
+                        <label>Verified CGPA</label>
+                        <input type="text" id="rbCGPA" value="8.50 / 10">
+                      </div>
+                    </div>
+                    <div class="rb-field">
+                      <label>Target Internship Role</label>
+                      <input type="text" id="rbRole" value="AI / Machine Learning Engineer Intern">
+                    </div>
+                    <div class="rb-field">
+                      <label>Professional Career Summary</label>
+                      <textarea id="rbSummary" rows="3">8th-semester Computer Science undergraduate with specialized focus on Agentic AI and Full-Stack Engineering. Proven ability to design deterministic LangGraph pipelines, REST backends, and responsive React interfaces with strict compliance.</textarea>
+                    </div>
 
-                <!-- Section 3: Education -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-graduation-cap"></i> 3. Academic Details
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Institution / University</label>
-                      <input type="text" id="rbCollege" value="KLE Technological University, Hubballi">
-                    </div>
-                    <div class="rb-field">
-                      <label>Degree & Branch</label>
-                      <input type="text" id="rbDegree" value="B.E. Computer Science & Engineering (AI)">
-                    </div>
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Semester</label>
-                      <input type="text" id="rbSemester" value="8th Semester">
-                    </div>
-                    <div class="rb-field">
-                      <label>CGPA</label>
-                      <input type="text" id="rbCGPA" value="8.65 / 10">
+                    <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
+                      <button type="button" class="btn btn-primary" onclick="rbGoToStep(2)" style="font-weight:600; padding:0.5rem 1.25rem;">
+                        Next: Skills & Projects ➔
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Section 4: Skills -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-laptop-code"></i> 4. Technical Skills
+                <!-- STEP 2: Skills Tags & Projects -->
+                <div id="rbStepCard2" class="rb-step-container" style="display:none;">
+                  <div class="rb-form-section">
+                    <div class="rb-form-section-header">
+                      <i class="fa-solid fa-tags"></i> Clickable Technical Skills (Zero Typing)
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.5rem;">
+                      Click any skill chip to toggle it on or off. Green chips are added to your resume:
+                    </div>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.75rem;" id="rbSkillPillsCatalog">
+                      <button type="button" class="rb-skill-chip selected" data-skill="Python" onclick="toggleSkillTag('Python')">Python</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="PyTorch" onclick="toggleSkillTag('PyTorch')">PyTorch</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="LangGraph" onclick="toggleSkillTag('LangGraph')">LangGraph</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="FastAPI" onclick="toggleSkillTag('FastAPI')">FastAPI</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="React" onclick="toggleSkillTag('React')">React</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="SQL" onclick="toggleSkillTag('SQL')">SQL</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="Docker" onclick="toggleSkillTag('Docker')">Docker</button>
+                      <button type="button" class="rb-skill-chip selected" data-skill="Git" onclick="toggleSkillTag('Git')">Git</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Java" onclick="toggleSkillTag('Java')">Java</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Spring Boot" onclick="toggleSkillTag('Spring Boot')">Spring Boot</button>
+                      <button type="button" class="rb-skill-chip" data-skill="C++" onclick="toggleSkillTag('C++')">C++</button>
+                      <button type="button" class="rb-skill-chip" data-skill="TypeScript" onclick="toggleSkillTag('TypeScript')">TypeScript</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Node.js" onclick="toggleSkillTag('Node.js')">Node.js</button>
+                      <button type="button" class="rb-skill-chip" data-skill="AWS" onclick="toggleSkillTag('AWS')">AWS</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Kubernetes" onclick="toggleSkillTag('Kubernetes')">Kubernetes</button>
+                      <button type="button" class="rb-skill-chip" data-skill="MongoDB" onclick="toggleSkillTag('MongoDB')">MongoDB</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Scikit-learn" onclick="toggleSkillTag('Scikit-learn')">Scikit-learn</button>
+                      <button type="button" class="rb-skill-chip" data-skill="TensorFlow" onclick="toggleSkillTag('TensorFlow')">TensorFlow</button>
+                      <button type="button" class="rb-skill-chip" data-skill="Linux" onclick="toggleSkillTag('Linux')">Linux</button>
+                    </div>
+
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                      <input type="text" id="rbCustomSkillInput" placeholder="Add custom skill (e.g. Redis, GraphQL)..." style="flex:1; padding:0.35rem 0.6rem; font-size:0.78rem;">
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomSkill()">
+                        <i class="fa-solid fa-plus"></i> Add
+                      </button>
+                    </div>
+                    <div id="rbCustomSkillsContainer" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.4rem;"></div>
                   </div>
-                  <div class="rb-field">
-                    <label>Programming Languages</label>
-                    <input type="text" id="rbLanguages" value="Python, C++, Java, SQL, TypeScript">
-                  </div>
-                  <div class="rb-field">
-                    <label>Frameworks & Libraries</label>
-                    <input type="text" id="rbFrameworks" value="PyTorch, TensorFlow, LangGraph, Scikit-learn, Pandas, NumPy, FastAPI">
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Cloud, DevOps & Tools</label>
-                      <input type="text" id="rbCloudTools" value="Docker, Git, Linux, AWS (EC2, S3), GitHub Actions">
+
+                  <div class="rb-form-section">
+                    <div class="rb-form-section-header">
+                      <i class="fa-solid fa-diagram-project"></i> 2 Key Technical Projects
+                    </div>
+
+                    <div class="rb-grid-2">
+                      <div class="rb-field">
+                        <label>Project 1 Title</label>
+                        <input type="text" id="rbProj1Title" value="AURA Multi-Agent Healthcare Decision & RAG Engine">
+                      </div>
+                      <div class="rb-field">
+                        <label>Tech Stack</label>
+                        <input type="text" id="rbProj1Tech" value="LangGraph, Python, PyTorch, Vector DB">
+                      </div>
                     </div>
                     <div class="rb-field">
-                      <label>Databases</label>
-                      <input type="text" id="rbDatabases" value="SQLite, PostgreSQL, MongoDB, Redis">
+                      <label>Bullet Points (Line-by-line)</label>
+                      <textarea id="rbProj1Bullets" rows="2">• Architected multi-agent graph with bounded retry loops and cryptographic audit logging.
+• Achieved 94% retrieval accuracy with zero-hallucination verification.</textarea>
+                    </div>
+
+                    <div class="rb-grid-2" style="margin-top:0.4rem;">
+                      <div class="rb-field">
+                        <label>Project 2 Title</label>
+                        <input type="text" id="rbProj2Title" value="Real-Time Campus Placement & Vacancy Decrement Portal">
+                      </div>
+                      <div class="rb-field">
+                        <label>Tech Stack</label>
+                        <input type="text" id="rbProj2Tech" value="FastAPI, React, SQLite, Docker">
+                      </div>
+                    </div>
+                    <div class="rb-field">
+                      <label>Bullet Points</label>
+                      <textarea id="rbProj2Bullets" rows="2">• Engineered end-to-end internship lifecycle tracking for 500+ candidates.
+• Implemented race-condition-free vacancy decrements and faculty approval gates.</textarea>
+                    </div>
+
+                    <div class="rb-field" style="margin-top:0.4rem;">
+                      <label>Certifications & Honors (Optional)</label>
+                      <textarea id="rbCertifications" rows="2">• AWS Certified Cloud Practitioner (2025)
+• Deep Learning Specialization — Coursera</textarea>
+                    </div>
+
+                    <div style="margin-top:1rem; display:flex; justify-content:space-between;">
+                      <button type="button" class="btn btn-secondary" onclick="rbGoToStep(1)">
+                        ⬅ Back: Academic Identity
+                      </button>
+                      <button type="button" class="btn btn-primary" onclick="rbGoToStep(3)" style="font-weight:600; padding:0.5rem 1.25rem;">
+                        Next: Review & Match ➔
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Section 5: Projects -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-diagram-project"></i> 5. Key Technical Projects
-                  </div>
-                  <div class="rb-grid-2">
-                    <div class="rb-field">
-                      <label>Project 1 Title</label>
-                      <input type="text" id="rbProj1Title" value="AURA Multi-Agent Healthcare RAG & Decision Engine">
+                <!-- STEP 3: Review & Actions -->
+                <div id="rbStepCard3" class="rb-step-container" style="display:none;">
+                  <div class="rb-form-section" style="background:rgba(56, 189, 248, 0.05); border-color:rgba(56, 189, 248, 0.3);">
+                    <div class="rb-form-section-header" style="color:#38bdf8;">
+                      <i class="fa-solid fa-circle-check"></i> Step 3: Verified ATS Resume Ready!
                     </div>
-                    <div class="rb-field">
-                      <label>Tech Stack</label>
-                      <input type="text" id="rbProj1Tech" value="LangGraph, Python, PyTorch, FAISS">
+                    <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.45; margin-bottom:0.75rem;">
+                      Your resume has been assembled according to university internship standards. You can now transfer it directly to the <strong>Skills Auto-Matcher</strong> to compute compatibility percentages across all active opportunities, or export it as a clean PDF.
                     </div>
-                  </div>
-                  <div class="rb-field">
-                    <label>Key Achievements / Bullets (Line by Line)</label>
-                    <textarea id="rbProj1Bullets" rows="2">• Architected multi-agent graph with bounded retry loops, achieving 94% retrieval accuracy.
-• Implemented cryptographic audit logging and role-based access for HIPAA compliance.</textarea>
-                  </div>
 
-                  <div class="rb-grid-2" style="margin-top:0.4rem;">
-                    <div class="rb-field">
-                      <label>Project 2 Title</label>
-                      <input type="text" id="rbProj2Title" value="Real-Time Object Detection & Tracking Pipeline">
-                    </div>
-                    <div class="rb-field">
-                      <label>Tech Stack</label>
-                      <input type="text" id="rbProj2Tech" value="PyTorch, OpenCV, Docker, AWS">
-                    </div>
-                  </div>
-                  <div class="rb-field">
-                    <label>Key Achievements / Bullets</label>
-                    <textarea id="rbProj2Bullets" rows="2">• Built low-latency object recognition pipeline processing 45 FPS on edge hardware.
-• Containerized application with Docker and established automated CI/CD pipeline on AWS.</textarea>
-                  </div>
-                </div>
+                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                      <button type="button" class="btn btn-primary" onclick="transferResumeToSkillsMatcher()" style="background:linear-gradient(135deg, #0284c7, #6366f1); border:none; padding:0.75rem 1rem; font-weight:700; font-size:0.9rem; justify-content:center;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 🚀 Send Directly to Resume & Skills Matcher ➔
+                      </button>
 
-                <!-- Section 6: Certifications -->
-                <div class="rb-form-section">
-                  <div class="rb-form-section-header">
-                    <i class="fa-solid fa-award"></i> 6. Certifications & Achievements
-                  </div>
-                  <div class="rb-field">
-                    <label>Certificates / Honors (One per line)</label>
-                    <textarea id="rbCertifications" rows="2">• AWS Certified Cloud Practitioner (Score: 890/1000)
-• Deep Learning Specialization (DeepLearning.AI / Coursera)
-• Winner, University Smart Campus Innovation Hackathon 2025</textarea>
+                      <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="btn btn-secondary" onclick="printResumeSheet()" style="flex:1; justify-content:center;">
+                          <i class="fa-solid fa-print"></i> Download / Print PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="copyResumePlainText()" style="flex:1; justify-content:center;">
+                          <i class="fa-solid fa-copy"></i> Copy Plain Text
+                        </button>
+                      </div>
+
+                      <button type="button" class="btn btn-outline" onclick="rbGoToStep(1)" style="margin-top:0.4rem; justify-content:center; font-size:0.78rem;">
+                        ✏️ Edit Details (Back to Step 1)
+                      </button>
+                    </div>
                   </div>
                 </div>
 
               </div>
 
-              <!-- Live Preview Column -->
+              <!-- Right Column: Live ATS-Standard Paper Preview -->
               <div style="position:sticky; top:1rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
                   <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
                     <i class="fa-solid fa-eye"></i> Live ATS-Standard Preview
                   </span>
-                  <span style="font-size:0.72rem; color:#10b981;">
+                  <span style="font-size:0.72rem; color:#10b981; font-weight:600;">
                     <i class="fa-solid fa-circle-check"></i> Auto-Synced
                   </span>
                 </div>
@@ -1048,8 +1116,8 @@
                 </div>
 
                 <div style="margin-top:0.85rem; display:flex; gap:0.6rem;">
-                  <button type="button" class="btn btn-primary" onclick="transferResumeToSkillsMatcher()" style="flex:1; justify-content:center; background:linear-gradient(135deg, #0284c7, #6366f1); border:none; padding:0.65rem 1rem; font-weight:600; font-size:0.88rem;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Use in Skills Matcher & Calculate Job Match ➔
+                  <button type="button" class="btn btn-primary" onclick="transferResumeToSkillsMatcher()" style="flex:1; justify-content:center; background:linear-gradient(135deg, #0284c7, #6366f1); border:none; padding:0.65rem 1rem; font-weight:700; font-size:0.88rem;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Use in Skills Matcher & Calculate Job Fit ➔
                   </button>
                 </div>
               </div>
@@ -1488,7 +1556,7 @@
   <script src="js/workflow.js?v=5.1"></script>
   <script src="js/aura_studio.js?v=5.1"></script>
   <script src="js/resume_matcher.js?v=5.1"></script>
-  <script src="js/resume_builder.js?v=5.1"></script>
+  <script src="js/resume_builder.js?v=5.2"></script>
 
   <script>
     const AURA_ROLE_MAP = {
