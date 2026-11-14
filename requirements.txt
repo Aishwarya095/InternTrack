@@ -1,0 +1,4 @@
+# INTERNTRACK - Project & Assignment Dependencies
+langgraph>=0.0.10
+python-docx>=1.0.0
+pytest>=7.0.0
