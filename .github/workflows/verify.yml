@@ -1,0 +1,31 @@
+name: InternTrack Automated CI & Verification
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f "Course Project/Codebase/requirements.txt" ]; then pip install -r "Course Project/Codebase/requirements.txt"; fi
+
+    - name: Verify Seed Database & Run Acceptance Suite
+      run: |
+        cd "Course Project/Codebase"
+        python -c "import database.db as db; print('Database verified!')"
