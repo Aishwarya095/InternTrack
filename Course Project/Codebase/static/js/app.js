@@ -47,6 +47,7 @@ function switchView(viewName) {
     "audit": "Immutable System Audit Trail",
     "chat": "1-on-1 AURA Assistant",
     "studio": "14-Lab Studio (LangGraph Engine)",
+    "resume-builder": "AI Resume & CV Builder",
     "resume-matcher": "Resume / CV Skills Auto-Matcher"
   };
   document.getElementById("currentViewTitle").innerText = titles[viewName] || "InternTrack";

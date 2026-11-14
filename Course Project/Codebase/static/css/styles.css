@@ -860,3 +860,119 @@ tr:hover td {
   border-color: rgba(99, 102, 241, 0.45);
   box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.15);
 }
+
+/* ============================================================
+   AI Resume & CV Builder Styles
+   ============================================================ */
+.resume-preview-sheet {
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: var(--radius-sm);
+  padding: 1.5rem 1.8rem;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.resume-sheet-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 1.5px solid #0f172a;
+  padding-bottom: 2px;
+  margin-top: 8px;
+}
+
+.rb-form-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.rb-form-section-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rb-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.rb-field {
+  margin-bottom: 0.55rem;
+}
+
+.rb-field label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.rb-field input,
+.rb-field textarea {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #f1f5f9;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rb-field input:focus,
+.rb-field textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+@keyframes pulseBorderHighlight {
+  0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(168, 85, 247, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+}
+
+.pulse-highlight {
+  animation: pulseBorderHighlight 1.5s ease;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #resumePreviewSheet, #resumePreviewSheet * {
+    visibility: visible;
+  }
+  #resumePreviewSheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 15mm;
+    box-shadow: none;
+    border: none;
+  }
+}
