@@ -1,0 +1,12 @@
+{
+  "name": "InternTrack",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install -r \"Course Project/Codebase/requirements.txt\"",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "InternTrack Web Portal",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
