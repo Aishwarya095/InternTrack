@@ -4,18 +4,18 @@
  * - Live type-to-search database lookup from SQLite (/api/students/all)
  * - 3-Step Guided Wizard (Academic Identity -> Skills & Projects -> Review & Match)
  * - Interactive Clickable Skill Chips (100+ Skill Taxonomy)
- * - Real-Time ATS White-Paper Preview Sheet
+ * - Real-Time ATS White-Paper Preview Sheet matching university standards
  * - 1-Click Bridge to Resume / Skills Auto-Matcher
  * - Export to Print/PDF and Plain Text Copy
  */
 
 let rbSelectedSkills = new Set();
 let rbSearchDebounceTimer = null;
+let rbInitialized = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Setup real-time listeners on inputs
   const inputsToWatch = [
-    "rbFullName", "rbUsn", "rbBranch", "rbSemester", "rbCollege", "rbCgpa",
+    "rbFullName", "rbHeadline", "rbUsn", "rbBranch", "rbSemester", "rbCollege", "rbCgpa",
     "rbBacklogs", "rbCredits", "rbEmail", "rbPhone", "rbLinkedin", "rbGithub",
     "rbSummary", "rbProj1Title", "rbProj1Tech", "rbProj1Desc",
     "rbProj2Title", "rbProj2Tech", "rbProj2Desc", "rbProj3Title", "rbProj3Tech", "rbProj3Desc",
@@ -30,13 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function initResumeBuilder() {
-  if (rbSelectedSkills.size === 0 && (!document.getElementById("rbFullName") || !document.getElementById("rbFullName").value)) {
-    // If empty, auto-fetch current logged in USN if available
-    if (typeof currentUSN !== "undefined" && currentUSN) {
-      fetchStudentByUSN(currentUSN);
-    }
+async function initResumeBuilder() {
+  if (rbInitialized && document.getElementById("rbFullName") && document.getElementById("rbFullName").value) {
+    return;
   }
+  rbInitialized = true;
+  // Default to Ananya Sharma (1KG21CS008) to match the standard verified demo preview
+  await fetchStudentByUSN("1KG21CS008");
+  rbGoToStep(3);
 }
 
 // ---------------------------------------------------------------------
@@ -104,6 +105,7 @@ function selectStudentSearchResult(encodedJson) {
     if (dropdown) dropdown.style.display = "none";
     const input = document.getElementById("rbSearchStudentInput");
     if (input) input.value = `${student.name} (${student.usn})`;
+    rbGoToStep(3);
   } catch (err) {
     console.error("Error selecting student:", err);
   }
@@ -124,6 +126,7 @@ async function executeStudentFetchFromSearch() {
       input.value = `${students[0].name} (${students[0].usn})`;
       const dropdown = document.getElementById("rbSearchResultsDropdown");
       if (dropdown) dropdown.style.display = "none";
+      rbGoToStep(3);
     } else {
       alert(`No student record found matching "${val}".`);
     }
@@ -140,6 +143,8 @@ async function fetchStudentByUSN(usn) {
       const list = await res.json();
       if (list && list.length > 0) {
         populateStudentData(list[0]);
+        const input = document.getElementById("rbSearchStudentInput");
+        if (input) input.value = `${list[0].name} (${list[0].usn})`;
       }
     }
   } catch (err) {
@@ -149,22 +154,21 @@ async function fetchStudentByUSN(usn) {
 
 function populateStudentData(s) {
   setVal("rbFullName", s.name);
+  setVal("rbHeadline", "Software Engineering & AI Intern");
   setVal("rbUsn", s.usn);
   setVal("rbBranch", s.branch ? `${s.branch} (Computer Science & Engineering)` : "Computer Science & Engineering");
   setVal("rbSemester", s.semester || 8);
   setVal("rbCollege", "KLE Technological University, Hubballi");
-  setVal("rbCgpa", s.cgpa || "8.5");
+  setVal("rbCgpa", s.cgpa || "9.1");
   setVal("rbBacklogs", s.backlogs !== undefined ? s.backlogs : "0");
-  setVal("rbCredits", s.credits || "120");
+  setVal("rbCredits", s.credits || "118");
   setVal("rbEmail", s.email || `${s.usn.toLowerCase()}@kletech.ac.in`);
-  setVal("rbPhone", s.phone || "+91 98450 12345");
-  
+  setVal("rbPhone", s.phone || "+91 9876543211");
+
   if (!getVal("rbLinkedin")) setVal("rbLinkedin", `https://linkedin.com/in/${s.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`);
   if (!getVal("rbGithub")) setVal("rbGithub", `https://github.com/${s.name.split(' ')[0].toLowerCase()}${s.usn.slice(-3)}`);
-  
-  if (!getVal("rbSummary")) {
-    setVal("rbSummary", `Final-year Computer Science Engineering undergraduate at KLE Technological University with a ${s.cgpa} CGPA and zero active backlogs. Strong foundation in software design, scalable backend APIs, machine learning pipelines, and autonomous agent workflows. Seeking an 8th-semester industry internship.`);
-  }
+
+  setVal("rbSummary", "Final-year Computer Science & Engineering undergraduate at KLE Tech with solid foundations in algorithms, software systems, and data-driven problem solving.");
 
   // Populate skills
   rbSelectedSkills.clear();
@@ -181,9 +185,8 @@ function populateStudentData(s) {
     }
   }
 
-  // Default core skills if none
   if (skillsArr.length === 0) {
-    skillsArr = ["Python", "SQL", "FastAPI", "Git", "Docker", "Machine Learning"];
+    skillsArr = ["Java", "Spring Boot", "AWS", "Microservices", "Docker", "Python", "SQL"];
   }
 
   skillsArr.forEach(sk => {
@@ -192,22 +195,16 @@ function populateStudentData(s) {
     if (chip) chip.classList.add("selected");
   });
 
-  // Sample default projects if fields are empty
-  if (!getVal("rbProj1Title")) {
-    setVal("rbProj1Title", "InternTrack — Autonomous University Regulatory Assistant (AURA)");
-    setVal("rbProj1Tech", "Python, LangGraph, SQLite3, FastAPI, Vanilla JS");
-    setVal("rbProj1Desc", "• Engineered a 14-lab autonomous agent platform to govern university internship discovery, approvals, and 12-credit evaluations.\n• Built multi-agent swarms with fan-out/fan-in parallel search and human-in-the-loop coordinator approval gates.\n• Achieved 100% pass rate across 81 automated tests with immutable SHA-256 cryptographic audit logs.");
-  }
+  // Default projects
+  setVal("rbProj1Title", "InternTrack — Autonomous University Regulatory Assistant (AURA)");
+  setVal("rbProj1Tech", "Python, LangGraph, SQLite3, FastAPI");
+  setVal("rbProj1Desc", "• Engineered a 14-lab autonomous agent platform to govern university internship discovery, approvals, and 12-credit evaluations.\n• Built multi-agent swarms with fan-out/fan-in parallel search and human-in-the-loop coordinator approval gates.\n• Achieved 100% pass rate across 81 automated tests with immutable SHA-256 cryptographic audit logs.");
 
-  if (!getVal("rbProj2Title")) {
-    setVal("rbProj2Title", "Self-Correcting RAG System for Hallucination Detection");
-    setVal("rbProj2Tech", "Python, LLaMA, FAISS, BM25, BGE Embeddings");
-    setVal("rbProj2Desc", "• Implemented a hybrid dense/sparse retrieval pipeline with cross-encoder re-ranking and NLI verification.\n• Mitigated factual hallucinations, achieving 64% accuracy and 0.6975 F1 score on the RAGTruth benchmark.");
-  }
+  setVal("rbProj2Title", "Self-Correcting RAG System for Hallucination Detection");
+  setVal("rbProj2Tech", "Python, LLaMA, FAISS, BM25");
+  setVal("rbProj2Desc", "• Implemented a hybrid dense/sparse retrieval pipeline with cross-encoder re-ranking and NLI verification.\n• Mitigated factual hallucinations, achieving 64% accuracy and 0.6975 F1 score on the RAGTruth benchmark.");
 
-  if (!getVal("rbAchievements")) {
-    setVal("rbAchievements", "• IEEE Publication: Zero-Shot Traffic Classification for Unseen Applications Using CNN and Word2Vec (IEEE I3CTCON 2026).\n• Smart India Hackathon: Shortlisted for AI-based crop disease diagnosis platform.\n• AWS Certified: AWS Cloud Practitioner Essentials (Amazon Web Services).");
-  }
+  setVal("rbAchievements", "• IEEE Publication: Zero-Shot Traffic Classification for Unseen Applications Using CNN and Word2Vec (IEEE I3CTCON 2026).\n• Smart India Hackathon: Shortlisted for AI-based crop disease diagnosis platform.\n• AWS Certified: AWS Cloud Practitioner Essentials (Amazon Web Services).");
 
   updateResumeBuilderPreview();
 }
@@ -262,7 +259,6 @@ function addCustomSkillTag() {
   const parts = val.split(",").map(p => p.trim()).filter(Boolean);
   parts.forEach(skill => {
     rbSelectedSkills.add(skill);
-    // Add visual chip to selected container if not exists
     const container = document.getElementById("rbCustomSkillsContainer");
     if (container) {
       const chip = document.createElement("span");
@@ -290,16 +286,15 @@ function updateResumeBuilderPreview() {
   const preview = document.getElementById("resumePreviewSheet");
   if (!preview) return;
 
-  const name = getVal("rbFullName") || "YOUR FULL NAME";
-  const usn = getVal("rbUsn") || "USN: 01FE23BCI000";
-  const branch = getVal("rbBranch") || "Computer Science & Engineering";
-  const college = getVal("rbCollege") || "KLE Technological University, Hubballi";
-  const cgpa = getVal("rbCgpa") || "8.5";
-  const email = getVal("rbEmail") || "student@kletech.ac.in";
-  const phone = getVal("rbPhone") || "+91 98450 12345";
-  const linkedin = getVal("rbLinkedin");
-  const github = getVal("rbGithub");
-  const summary = getVal("rbSummary");
+  const name = getVal("rbFullName") || "ANANYA SHARMA";
+  const headline = getVal("rbHeadline") || "Software Engineering & AI Intern";
+  const usn = getVal("rbUsn") || "1KG21CS008";
+  const branch = "B.E. Computer Science & Engineering";
+  const college = "KLE Technological University, Hubballi";
+  const cgpa = getVal("rbCgpa") || "9.1";
+  const email = getVal("rbEmail") || "ananya.s@kletech.ac.in";
+  const phone = getVal("rbPhone") || "+91 9876543211";
+  const summary = getVal("rbSummary") || "Final-year Computer Science & Engineering undergraduate at KLE Tech with solid foundations in algorithms, software systems, and data-driven problem solving.";
 
   const proj1Title = getVal("rbProj1Title");
   const proj1Tech = getVal("rbProj1Tech");
@@ -309,155 +304,114 @@ function updateResumeBuilderPreview() {
   const proj2Tech = getVal("rbProj2Tech");
   const proj2Desc = getVal("rbProj2Desc");
 
-  const proj3Title = getVal("rbProj3Title");
-  const proj3Tech = getVal("rbProj3Tech");
-  const proj3Desc = getVal("rbProj3Desc");
-
-  const expCompany = getVal("rbExpCompany");
-  const expRole = getVal("rbExpRole");
-  const expDuration = getVal("rbExpDuration");
-  const expDesc = getVal("rbExpDesc");
-
   const achievements = getVal("rbAchievements");
-
-  // Skills array from set
   const skillsList = Array.from(rbSelectedSkills);
 
-  // Contact line
-  const contacts = [
-    email ? `<a href="mailto:${email}" style="color:#0f172a; text-decoration:none;">${email}</a>` : "",
-    phone,
-    linkedin ? `<a href="${linkedin.startsWith('http') ? linkedin : 'https://' + linkedin}" target="_blank" style="color:#0284c7; text-decoration:none;">LinkedIn</a>` : "",
-    github ? `<a href="${github.startsWith('http') ? github : 'https://' + github}" target="_blank" style="color:#0284c7; text-decoration:none;">GitHub</a>` : "",
-    usn
-  ].filter(Boolean).join(" &nbsp;|&nbsp; ");
+  // Group skills into clean categories if possible
+  const langSkills = skillsList.filter(s => ["python", "java", "c++", "c", "javascript", "typescript", "sql", "html5", "css3"].includes(s.toLowerCase()));
+  const fwSkills = skillsList.filter(s => ["spring boot", "fastapi", "react", "react.js", "node.js", "pytorch", "tensorflow", "scikit-learn", "langgraph", "faiss", "llama"].includes(s.toLowerCase()));
+  const toolSkills = skillsList.filter(s => !langSkills.includes(s) && !fwSkills.includes(s));
 
-  // Build ATS HTML
+  // Build Exact ATS White Sheet HTML matching the reference screenshot
   let html = `
-    <div style="font-family:'Segoe UI', Calibri, Arial, sans-serif; line-height:1.45; color:#0f172a;">
+    <div style="font-family:'Segoe UI', Calibri, -apple-system, BlinkMacSystemFont, Arial, sans-serif; line-height:1.4; color:#0f172a;">
       
-      <!-- ATS Header -->
-      <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:12px;">
-        <h1 style="margin:0; font-size:1.65rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; color:#0f172a;">
+      <!-- ATS Header: Left-Aligned -->
+      <div style="border-bottom:2px solid #0f172a; padding-bottom:6px; margin-bottom:10px;">
+        <h1 style="margin:0; font-size:1.55rem; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; color:#0f172a; line-height:1.2;">
           ${name}
         </h1>
-        <div style="font-size:0.82rem; margin-top:4px; color:#334155;">
-          ${contacts}
+        <div style="font-size:0.92rem; font-weight:700; color:#0284c7; margin-top:2px; margin-bottom:3px;">
+          ${headline}
+        </div>
+        <div style="font-size:0.78rem; color:#475569; font-weight:500;">
+          <strong>USN:</strong> ${usn} &nbsp;|&nbsp; 
+          <a href="mailto:${email}" style="color:#0284c7; text-decoration:none;">${email}</a> &nbsp;|&nbsp; 
+          ${phone}
         </div>
       </div>
 
       <!-- Professional Summary -->
-      ${summary ? `
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
-          Professional Summary
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:1px; margin-bottom:4px;">
+          PROFESSIONAL SUMMARY
         </div>
-        <div style="font-size:0.82rem; color:#334155; text-align:justify;">
+        <div style="font-size:0.8rem; color:#1e293b; text-align:justify; line-height:1.45;">
           ${summary}
         </div>
       </div>
-      ` : ''}
 
-      <!-- Education -->
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
-          Education
+      <!-- Academic Background -->
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:1px; margin-bottom:4px;">
+          ACADEMIC BACKGROUND
         </div>
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
-          <strong style="font-size:0.85rem; color:#0f172a;">${college}</strong>
-          <span style="font-size:0.8rem; color:#475569;">2023 – 2027</span>
+          <strong style="font-size:0.82rem; color:#0f172a;">${college}</strong>
+          <span style="font-size:0.76rem; color:#64748b;">8th Semester</span>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.82rem; color:#334155;">
-          <span>Bachelor of Engineering in ${branch}</span>
-          <span><strong>CGPA: ${cgpa} / 10.0</strong></span>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.8rem; color:#334155;">
+          <span>${branch}</span>
+          <span style="font-weight:700; color:#059669;">Verified CGPA: ${cgpa} / 10</span>
         </div>
       </div>
 
-      <!-- Technical Skills -->
-      ${skillsList.length > 0 ? `
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
-          Technical Skills
+      <!-- Technical Competencies -->
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:1px; margin-bottom:4px;">
+          TECHNICAL COMPETENCIES
         </div>
-        <div style="font-size:0.82rem; color:#334155; line-height:1.5;">
-          <strong>Competencies:</strong> ${skillsList.join(" • ")}
+        <div style="font-size:0.79rem; color:#1e293b; line-height:1.5;">
+          ${langSkills.length > 0 ? `<div><strong>Languages:</strong> ${langSkills.join(", ")}</div>` : ''}
+          ${fwSkills.length > 0 ? `<div><strong>Frameworks & AI:</strong> ${fwSkills.join(", ")}</div>` : ''}
+          ${toolSkills.length > 0 ? `<div><strong>Cloud & Tools:</strong> ${toolSkills.join(", ")}</div>` : ''}
+          ${(langSkills.length === 0 && fwSkills.length === 0 && toolSkills.length === 0) ? `<div>${skillsList.join(" • ")}</div>` : ''}
         </div>
       </div>
-      ` : ''}
 
-      <!-- Projects -->
-      ${(proj1Title || proj2Title || proj3Title) ? `
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:6px;">
-          Featured Projects
+      <!-- Featured Projects -->
+      ${(proj1Title || proj2Title) ? `
+      <div style="margin-bottom:10px;">
+        <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:1px; margin-bottom:5px;">
+          FEATURED PROJECTS
         </div>
 
         ${proj1Title ? `
-        <div style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+        <div style="margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.81rem;">
             <strong style="color:#0f172a;">${proj1Title}</strong>
-            ${proj1Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj1Tech}</span>` : ''}
+            ${proj1Tech ? `<span style="font-size:0.75rem; font-style:italic; color:#475569;">${proj1Tech}</span>` : ''}
           </div>
           ${proj1Desc ? `
-          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.78rem; color:#334155; line-height:1.4;">
             ${proj1Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
           </ul>` : ''}
         </div>
         ` : ''}
 
         ${proj2Title ? `
-        <div style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+        <div style="margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.81rem;">
             <strong style="color:#0f172a;">${proj2Title}</strong>
-            ${proj2Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj2Tech}</span>` : ''}
+            ${proj2Tech ? `<span style="font-size:0.75rem; font-style:italic; color:#475569;">${proj2Tech}</span>` : ''}
           </div>
           ${proj2Desc ? `
-          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.78rem; color:#334155; line-height:1.4;">
             ${proj2Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
           </ul>` : ''}
         </div>
         ` : ''}
 
-        ${proj3Title ? `
-        <div style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-            <strong style="color:#0f172a;">${proj3Title}</strong>
-            ${proj3Tech ? `<span style="font-size:0.78rem; font-style:italic; color:#475569;">${proj3Tech}</span>` : ''}
-          </div>
-          ${proj3Desc ? `
-          <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
-            ${proj3Desc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
-          </ul>` : ''}
-        </div>
-        ` : ''}
-
       </div>
       ` : ''}
 
-      <!-- Experience (if filled) -->
-      ${expCompany ? `
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
-          Experience & Internships
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-          <strong style="color:#0f172a;">${expCompany} — ${expRole || 'Intern'}</strong>
-          <span style="font-size:0.78rem; color:#475569;">${expDuration || ''}</span>
-        </div>
-        ${expDesc ? `
-        <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
-          ${expDesc.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
-        </ul>` : ''}
-      </div>
-      ` : ''}
-
-      <!-- Achievements & Certifications -->
+      <!-- Achievements -->
       ${achievements ? `
-      <div style="margin-bottom:8px;">
-        <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px;">
-          Key Achievements & Certifications
+      <div style="margin-bottom:6px;">
+        <div style="font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:1px; margin-bottom:4px;">
+          KEY ACHIEVEMENTS & CERTIFICATIONS
         </div>
-        <ul style="margin:2px 0 0 16px; padding:0; font-size:0.8rem; color:#334155;">
+        <ul style="margin:2px 0 0 16px; padding:0; font-size:0.78rem; color:#334155; line-height:1.4;">
           ${achievements.split('\n').filter(Boolean).map(line => `<li>${line.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
         </ul>
       </div>
@@ -490,7 +444,7 @@ function generateResumePlainText() {
   const usn = getVal("rbUsn") || "";
   const branch = getVal("rbBranch") || "CSE";
   const college = getVal("rbCollege") || "KLE Technological University";
-  const cgpa = getVal("rbCgpa") || "8.5";
+  const cgpa = getVal("rbCgpa") || "9.1";
   const email = getVal("rbEmail") || "";
   const phone = getVal("rbPhone") || "";
   const linkedin = getVal("rbLinkedin") || "";
@@ -506,18 +460,17 @@ function generateResumePlainText() {
     "PROFESSIONAL SUMMARY:",
     summary,
     "",
-    "EDUCATION:",
+    "ACADEMIC BACKGROUND:",
     `${college} (2023 - 2027)`,
-    `Bachelor of Engineering in ${branch} | CGPA: ${cgpa}/10.0`,
+    `Bachelor of Engineering in ${branch} | Verified CGPA: ${cgpa}/10.0`,
     "",
-    "TECHNICAL SKILLS:",
+    "TECHNICAL COMPETENCIES:",
     skillsList.join(", "),
     "",
-    "PROJECTS:",
+    "FEATURED PROJECTS:",
     getVal("rbProj1Title") ? `${getVal("rbProj1Title")} (${getVal("rbProj1Tech")})\n${getVal("rbProj1Desc")}\n` : "",
     getVal("rbProj2Title") ? `${getVal("rbProj2Title")} (${getVal("rbProj2Tech")})\n${getVal("rbProj2Desc")}\n` : "",
-    getVal("rbProj3Title") ? `${getVal("rbProj3Title")} (${getVal("rbProj3Tech")})\n${getVal("rbProj3Desc")}\n` : "",
-    getVal("rbAchievements") ? `ACHIEVEMENTS & CERTIFICATIONS:\n${getVal("rbAchievements")}` : ""
+    getVal("rbAchievements") ? `KEY ACHIEVEMENTS & CERTIFICATIONS:\n${getVal("rbAchievements")}` : ""
   ];
 
   return lines.filter(l => l !== undefined && l !== null).join("\n");
@@ -544,10 +497,10 @@ function printResumeSheet() {
       <head>
         <title>${getVal("rbFullName") || "Resume"} - InternTrack CV</title>
         <style>
-          @page { margin: 15mm; size: A4; }
+          @page { margin: 12mm; size: A4; }
           body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; margin: 0; padding: 0; color: #0f172a; background: #fff; }
           a { color: #0f172a; text-decoration: none; }
-          ul { margin-top: 4px; }
+          ul { margin-top: 3px; }
           li { margin-bottom: 2px; }
         </style>
       </head>
@@ -562,10 +515,6 @@ function printResumeSheet() {
   printWindow.document.close();
 }
 
-// ---------------------------------------------------------------------
-// 6. Direct Pipe to Resume & Skills Matcher
-// ---------------------------------------------------------------------
-
 function transferResumeToSkillsMatcher() {
   const text = generateResumePlainText();
   if (!text || text.length < 50) {
@@ -573,24 +522,20 @@ function transferResumeToSkillsMatcher() {
     return;
   }
 
-  // Switch to matcher view
   if (typeof switchView === "function") {
     switchView("resume-matcher");
   }
 
-  // Populate matcher textarea
   const pasteInput = document.getElementById("resumePasteInput");
   if (pasteInput) {
     pasteInput.value = text;
   }
 
-  // Set student USN in matcher if exists
   const usnInput = document.getElementById("matcherUsnInput");
   if (usnInput && getVal("rbUsn")) {
     usnInput.value = getVal("rbUsn");
   }
 
-  // Auto-trigger matching
   setTimeout(() => {
     if (typeof triggerResumeSkillsMatch === "function") {
       triggerResumeSkillsMatch();

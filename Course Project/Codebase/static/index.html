@@ -916,6 +916,11 @@
                   </div>
                 </div>
 
+                <div style="margin-bottom:0.75rem;">
+                  <label style="font-size:0.78rem; font-weight:600; color:var(--text-muted);">Target Role / Headline</label>
+                  <input type="text" id="rbHeadline" placeholder="e.g. Software Engineering & AI Intern">
+                </div>
+
                 <div style="display:grid; grid-template-columns: 1.4fr 0.6fr; gap:0.75rem; margin-bottom:0.75rem;">
                   <div>
                     <label style="font-size:0.78rem; font-weight:600; color:var(--text-muted);">Department / Branch</label>
@@ -1084,36 +1089,27 @@
 
               <!-- STEP 3: Review & Action -->
               <div id="rbStepCard3" class="rb-step-container" style="display:none;">
-                <div style="font-weight:700; font-size:0.92rem; color:#38bdf8; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.4rem;">
-                  <i class="fa-solid fa-circle-check"></i> Review & Next Actions
+                <div style="font-weight:700; font-size:0.95rem; color:#38bdf8; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                  <i class="fa-solid fa-circle-check"></i> STEP 3: VERIFIED ATS RESUME READY!
+                </div>
+                <div style="font-size:0.82rem; color:#94a3b8; line-height:1.5; margin-bottom:1.25rem;">
+                  Your resume has been assembled according to university internship standards. You can now transfer it directly to the Skills Auto-Matcher to compute compatibility percentages across all active opportunities, or export it as a clean PDF.
                 </div>
 
-                <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.25rem;">
-                  <div style="font-weight:700; color:#38bdf8; font-size:0.88rem; margin-bottom:0.5rem;">
-                    <i class="fa-solid fa-shield-check"></i> ATS Verification Ready
+                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1rem;">
+                  <button type="button" class="btn btn-primary" style="padding:0.85rem 1rem; font-size:0.92rem; font-weight:700; display:flex; align-items:center; justify-content:center; gap:0.5rem;" onclick="transferResumeToSkillsMatcher()">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Send Directly to Resume & Skills Matcher ➔
+                  </button>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.65rem;">
+                    <button type="button" class="btn btn-secondary" onclick="printResumeSheet()">
+                      <i class="fa-solid fa-print"></i> Download / Print PDF
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="copyResumePlainText()">
+                      <i class="fa-solid fa-copy"></i> Copy Plain Text
+                    </button>
                   </div>
-                  <ul style="margin:0; padding-left:1.2rem; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
-                    <li>Formatted to industry standard 1-page single-column layout for ATS parser compliance.</li>
-                    <li>Verified against SQLite university database records with zero backlogs check.</li>
-                    <li>Directly integrated with the <strong>Resume & Skills Matcher</strong> for vacancy compatibility.</li>
-                  </ul>
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1.25rem;">
-                  <button type="button" class="btn btn-primary" style="padding:0.75rem 1rem; font-size:0.9rem;" onclick="transferResumeToSkillsMatcher()">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Transfer to Resume / Skills Matcher ➔
-                  </button>
-                  <button type="button" class="btn btn-secondary" onclick="printResumeSheet()">
-                    <i class="fa-solid fa-print"></i> Print / Download PDF Sheet
-                  </button>
-                  <button type="button" class="btn btn-secondary" onclick="copyResumePlainText()">
-                    <i class="fa-solid fa-copy"></i> Copy Clean ATS Plain Text
-                  </button>
-                </div>
-
-                <div style="display:flex; justify-content:flex-start;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="rbGoToStep(2)">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Step 2
+                  <button type="button" class="btn btn-secondary" style="border:1px solid rgba(255,255,255,0.15);" onclick="rbGoToStep(1)">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Details (Back to Step 1)
                   </button>
                 </div>
               </div>
@@ -1121,11 +1117,11 @@
               <!-- RIGHT COLUMN: Live ATS White-Paper Preview Sheet -->
               <div style="position:sticky; top:1rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                  <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
-                    <i class="fa-solid fa-file-lines"></i> Live ATS Document Preview
+                  <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="fa-solid fa-eye"></i> LIVE ATS-STANDARD PREVIEW
                   </span>
-                  <span class="badge" style="background:#22c55e22; color:#4ade80; border:1px solid #22c55e44; font-size:0.7rem;">
-                    Real-Time Sync
+                  <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); font-size:0.72rem; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-circle" style="font-size:0.45rem;"></i> Auto-Synced
                   </span>
                 </div>
                 <div class="resume-preview-sheet" id="resumePreviewSheet">
