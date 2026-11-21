@@ -1,16 +1,22 @@
-# Assignment 10: Cloud Ops Resilience, Circuit Breakers & Self-Healing
+# Assignment 10: Lab 10 Implementation
 
 ## 📌 Overview
-Builds high-availability operational resilience for agent workflows: implements circuit breakers, retry with exponential backoff, fallback pipelines, and self-healing error recovery.
+Standalone implementation, unit test suites, and verified contracts for Lab 10 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab10_resilience.py, 	est_lab10_resilience.py
+- **Lab Code:** lab10_resilience.py
+- **Verification Tests:** test_lab10_resilience.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab10_resilience.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab10_resilience.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab10_resilience.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

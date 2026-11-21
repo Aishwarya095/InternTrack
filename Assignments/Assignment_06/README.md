@@ -1,16 +1,22 @@
-# Assignment 06: Controlled Runtime & Deterministic Safety Gate
+# Assignment 06: Lab 6 Implementation
 
 ## 📌 Overview
-Builds a controlled execution runtime with pre-execution safety gates and immutable execution logs. Prohibits autonomous release without faculty mentor, coordinator, and HOD sign-offs.
+Standalone implementation, unit test suites, and verified contracts for Lab 6 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab6_runtime.py, 	est_lab6_real_gate.py, 	est_lab6_gate_verification.py
+- **Lab Code:** lab6_runtime.py
+- **Verification Tests:** test_lab6_gate_verification.py, test_lab6_real_gate.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab6_real_gate.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab6_runtime.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab6_gate_verification.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

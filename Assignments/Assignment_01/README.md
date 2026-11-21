@@ -1,16 +1,22 @@
-# Assignment 01: Agent vs Chatbot Concept: Plan-Act-Observe-Revise Cycle
+# Assignment 01: Lab 1 Implementation
 
 ## 📌 Overview
-Implements the goal-driven autonomous agent loop for 8th-semester internship planning. Unlike a stateless chatbot that merely responds to text, the agent asks proactive clarification questions, synthesizes a structured multi-phase plan, and revises milestones in response to student feedback.
+Standalone implementation, unit test suites, and verified contracts for Lab 1 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab1_agent_vs_chatbot.py, lab1_planner.py, 	est_lab1_memory_verify.py
+- **Lab Code:** lab1_agent_vs_chatbot.py, lab1_planner.py
+- **Verification Tests:** test_lab1_memory_verify.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
 python lab1_agent_vs_chatbot.py
-`
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab1_memory_verify.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

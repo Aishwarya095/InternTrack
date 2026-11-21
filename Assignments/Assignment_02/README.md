@@ -1,16 +1,22 @@
-# Assignment 02: Tool-Using Agent: Typed Interfaces & Single-Point Call Tracing
+# Assignment 02: Lab 2 Implementation
 
 ## 📌 Overview
-Equips the agent with typed deterministic tools to query student profiles, verify CGPA/backlog criteria, check live corporate vacancies, and compute eligibility strictly from database records without inventing numbers or hardcoding.
+Standalone implementation, unit test suites, and verified contracts for Lab 2 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab2_tool_using_agent.py, lab2_tools.py, 	est_endpoints_verify.py
+- **Lab Code:** lab2_tools.py, lab2_tool_using_agent.py
+- **Verification Tests:** test_endpoints_verify.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python lab2_tool_using_agent.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab2_tools.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_endpoints_verify.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

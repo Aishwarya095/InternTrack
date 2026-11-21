@@ -1,16 +1,22 @@
-# Assignment 05: Governed MCP-Style Data Connector
+# Assignment 05: Lab 5 Implementation
 
 ## 📌 Overview
-Enforces a secure, governed data gateway for all external database and API accesses. Validates bearer authentication, enforces role-based access control (RBAC), and sanitizes credentials.
+Standalone implementation, unit test suites, and verified contracts for Lab 5 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab5_connector.py, 	est_lab5_governance.py
+- **Lab Code:** lab5_connector.py
+- **Verification Tests:** test_lab5_governance.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab5_governance.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab5_connector.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab5_governance.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

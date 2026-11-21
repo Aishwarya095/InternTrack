@@ -1,16 +1,22 @@
-# Assignment 08: Parallel Swarm & Fan-Out / Fan-In with Human Approval Gate
+# Assignment 08: Lab 8 Implementation
 
 ## 📌 Overview
-Executes parallel worker swarms across student preferences simultaneously (fan-out), collects eligibility results, and fans in to the Coordinator Human-in-the-Loop Gate before finalizing allocations.
+Standalone implementation, unit test suites, and verified contracts for Lab 8 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab8_langgraph.py, 	est_lab8_complete_suite.py
+- **Lab Code:** lab8_langgraph.py
+- **Verification Tests:** test_lab8_complete_suite.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab8_complete_suite.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab8_langgraph.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab8_complete_suite.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

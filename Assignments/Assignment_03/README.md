@@ -1,16 +1,22 @@
-# Assignment 03: Reusable Skills & Procedural Rubric Verification
+# Assignment 03: Lab 3 Implementation
 
 ## 📌 Overview
-Encapsulates complex business rules into modular, composable skills: GPA verification skill, document compliance checker, and 100-point rubric evaluation skill with structured feedback generation.
+Standalone implementation, unit test suites, and verified contracts for Lab 3 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab3_skill_creation.py, lab3_skills.py, 	est_lab3_verify.py, 	est_lab3_acceptance_all.py
+- **Lab Code:** lab3_skills.py, lab3_skill_creation.py
+- **Verification Tests:** test_lab3_acceptance_all.py, test_lab3_verify.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python lab3_skill_creation.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab3_skills.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab3_acceptance_all.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

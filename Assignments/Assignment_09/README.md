@@ -1,16 +1,22 @@
-# Assignment 09: Deep Research & Grounding with Citation Verification
+# Assignment 09: Lab 9 Implementation
 
 ## 📌 Overview
-Implements deep research and evidence grounding agent. Every verification score, company profile, and eligibility decision must cite verified source records with strict hallucination rejection.
+Standalone implementation, unit test suites, and verified contracts for Lab 9 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab9_grounding.py, external_research.py, 	est_lab9_grounding.py
+- **Lab Code:** external_research.py, lab9_grounding.py
+- **Verification Tests:** test_lab9_grounding.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab9_grounding.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python external_research.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab9_grounding.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

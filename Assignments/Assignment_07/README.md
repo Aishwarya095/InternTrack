@@ -1,16 +1,22 @@
-# Assignment 07: Explicit Graph Execution: LangGraph State Machine
+# Assignment 07: Lab 7 Implementation
 
 ## 📌 Overview
-Replaces fragile prompt chains with an explicit directed graph (LangGraph). Models the entire internship lifecycle as deterministic nodes (Discovery -> Eligibility -> Application -> Approval -> Tracking -> Evaluation) with conditional branching.
+Standalone implementation, unit test suites, and verified contracts for Lab 7 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab7_langgraph.py, lab7_graph.py, 	est_lab7_complete_suite.py
+- **Lab Code:** lab7_graph.py, lab7_langgraph.py
+- **Verification Tests:** test_lab7_complete_suite.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python test_lab7_complete_suite.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab7_graph.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_lab7_complete_suite.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)

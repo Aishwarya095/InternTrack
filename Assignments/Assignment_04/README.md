@@ -1,16 +1,22 @@
-# Assignment 04: Two-Tier Memory & Session State Retrieval
+# Assignment 04: Lab 4 Implementation
 
 ## 📌 Overview
-Architects two-tier memory architecture separating ephemeral working memory (session state across the 4-phase application) from long-term immutable episodic memory (historical submissions and audit events).
+Standalone implementation, unit test suites, and verified contracts for Lab 4 of the InternTrack Capstone platform.
 
 ## 📁 Key Implementation Files
-lab4_memory_and_retrieval.py, lab4_memory.py, 	est_new_student_db_and_memory.py
+- **Lab Code:** lab4_memory.py, lab4_memory_and_retrieval.py
+- **Verification Tests:** test_new_student_db_and_memory.py
 
-## ⚡ Execution Command
-To run this assignment independently:
-`ash
-python lab4_memory_and_retrieval.py
-`
+## ⚡ Execution Commands
+Run the standalone lab execution:
+```bash
+python lab4_memory.py
+```
+
+Run the verification test suite:
+```bash
+python -m unittest test_new_student_db_and_memory.py
+```
 
 ---
 [⬅️ Back to Assignments Overview](../README.md) | [🏠 Back to Project Root](../../README.md)
