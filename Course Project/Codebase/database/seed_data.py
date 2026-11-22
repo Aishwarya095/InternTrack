@@ -3,6 +3,11 @@ import json
 import os
 from datetime import datetime, timedelta
 
+try:
+    from database.seed_opportunities import ALL_INITIAL_OPPORTUNITIES
+except ImportError:
+    from seed_opportunities import ALL_INITIAL_OPPORTUNITIES
+
 def seed():
     db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'database', 'interntrack.db')
     conn = sqlite3.connect(db_path)
@@ -408,8 +413,18 @@ def seed():
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, evaluations)
     
+    # Ensure all initial opportunities (5 Benchmark Test Fixtures + 20 Top MNCs + 30 Real Postings) are seeded
+    cursor.executemany("""
+    INSERT OR IGNORE INTO opportunities (
+        id, company, title, domain, description, location, mode,
+        min_cgpa, max_backlogs, required_branch, required_skills, duration, stipend_monthly,
+        start_date, end_date, total_vacancies, filled_vacancies, available_vacancies,
+        deadline, eligibility_criteria, status, created_by, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, ALL_INITIAL_OPPORTUNITIES)
+
     # Update Vacancies in opportunities table to match the approved internships
-    cursor.execute("UPDATE opportunities SET filled_vacancies = 0, available_vacancies = total_vacancies;")
+    cursor.execute("UPDATE opportunities SET filled_vacancies = 0, available_vacancies = total_vacancies WHERE id NOT LIKE 'OPP-IND-%';")
     counts = cursor.execute("SELECT approved_company, count(*) FROM student_submissions WHERE status IN ('CONFIRMED', 'COORDINATOR_APPROVED') AND approved_company IS NOT NULL GROUP BY approved_company").fetchall()
     for comp, cnt in counts:
         cursor.execute("""
