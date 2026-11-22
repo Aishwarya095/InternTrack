@@ -517,7 +517,7 @@ function printResumeSheet() {
 
 function transferResumeToSkillsMatcher() {
   const text = generateResumePlainText();
-  if (!text || text.length < 50) {
+  if (!text || text.length < 30) {
     alert("Please enter your academic details and skills first!");
     return;
   }
@@ -526,19 +526,24 @@ function transferResumeToSkillsMatcher() {
     switchView("resume-matcher");
   }
 
-  const pasteInput = document.getElementById("resumePasteInput");
+  const pasteInput = document.getElementById("resumeTextInput") || document.getElementById("resumePasteInput");
   if (pasteInput) {
     pasteInput.value = text;
   }
 
-  const usnInput = document.getElementById("matcherUsnInput");
-  if (usnInput && getVal("rbUsn")) {
-    usnInput.value = getVal("rbUsn");
+  const usn = getVal("rbUsn");
+  if (usn) {
+    if (typeof currentUSN !== "undefined") currentUSN = usn;
+    const formUsnInput = document.getElementById("formStudentUSNInput");
+    if (formUsnInput) formUsnInput.value = usn;
   }
 
   setTimeout(() => {
-    if (typeof triggerResumeSkillsMatch === "function") {
-      triggerResumeSkillsMatch();
+    if (typeof runResumeMatch === "function") {
+      runResumeMatch();
+    } else if (typeof window.runResumeMatch === "function") {
+      window.runResumeMatch();
     }
-  }, 300);
+  }, 250);
 }
+window.transferResumeToSkillsMatcher = transferResumeToSkillsMatcher;
