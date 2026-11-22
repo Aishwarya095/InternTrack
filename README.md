@@ -15,8 +15,7 @@
 | **Nischita N** | `01FE23BCI106` | CSE (AI) — Division B | Governance, Safety Gates & Audit Trail |
 
 - **Team Name / Number:** InternTrack Team 11  
-- **Worklet Title:** InternTrack — AURA-Powered Internship Application & Tracking Portal  
-- **Guiding Institutional Principle:** *"Agents draft, screen, analyze, and flag; a named human approves."*  
+- **Worklet Title:** InternTrack — Internship Application & Tracking Portal   
 - **Live Deployment Instance:** [https://interntrack-pv3r.onrender.com](https://interntrack-pv3r.onrender.com)  
 
 ---
