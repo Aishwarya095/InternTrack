@@ -22,7 +22,7 @@
 
 ## 🔗 Quick Navigation Links
 
-- 📑 [**Official Artifact Technical Report (Markdown)**](./Course%20Project/Artifact_Report_InternTrack.md) · [**Word Document (.docx)**](./Course%20Project/Artifact_Report_InternTrack.docx) — Formal 15-section academic report prepared according to KLE Tech standards.
+- 📑 [**Official Artifact Technical Report (Markdown)**](./Course%20Project/Artifact_Report_InternTrack.md) · [**Word Document (.docx)**](./Course%20Project/Artifact_Report_InternTrack_Complete.docx) · [**Technical Report (.docx)**](./Course%20Project/Technical_Report_InternTrack.docx) — Formal 15-section academic report prepared according to KLE Tech standards.
 - 📂 [**Assignments Folder (Labs 1 to 14)**](./Assignments/) — Standalone code, test scripts, and execution guides for all 14 coursework assignments (28 graded tasks).
 - 📂 [**Course Project Folder**](./Course%20Project/) — Project codebase, original problem statement, and formal final evaluation report.
   - 📄 [Original Problem Statement Document (DOCX)](./Course%20Project/Problem_Statement.docx) · [PDF Version](./Course%20Project/AAI_INTERNSHIP_DOC.pdf)
